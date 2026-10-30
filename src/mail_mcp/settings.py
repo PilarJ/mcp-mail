@@ -43,13 +43,17 @@ class Settings(BaseSettings):
     from_name: str = Field(default="", alias="FROM_NAME")
 
     # --- The hard limit on where mail can go. ---
-    # Entries are either a full address or "@domain" for everyone at a domain.
+    # Entries are either a full address or "@domain" for everyone at a domain;
+    # "*" alone permits any recipient.
     # Empty disables sending entirely: an unset allowlist must fail closed.
     allowed_recipients_raw: str = Field(default="", alias="ALLOWED_RECIPIENTS")
 
     # Optional guard against an agent sending the same person mail repeatedly.
     # 0 disables it.
     dedup_minutes: int = Field(default=0, alias="DEDUP_MINUTES")
+
+    # Registers mail_delete, which expunges for good. Off unless asked for.
+    allow_delete: bool = Field(default=False, alias="ALLOW_DELETE")
 
     max_body_chars: int = Field(default=50_000, alias="MAX_BODY_CHARS")
     max_attachment_bytes: int = Field(default=5_000_000, alias="MAX_ATTACHMENT_BYTES")

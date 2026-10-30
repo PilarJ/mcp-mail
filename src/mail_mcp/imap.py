@@ -164,6 +164,13 @@ class ImapClient:
 
         return await self.run(op, folder)
 
+    async def delete(self, folder: str, uids: list[str]) -> dict:
+        def op(mb: MailBox) -> dict:
+            mb.delete(uids)  # flags \Deleted and expunges: not recoverable
+            return {"status": "ok", "uids": uids, "deleted_from": folder}
+
+        return await self.run(op, folder)
+
     async def append_raw(self, folder: str, raw: bytes, flags: list[str]) -> dict:
         def op(mb: MailBox) -> dict:
             if not mb.folder.exists(folder):

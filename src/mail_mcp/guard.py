@@ -36,28 +36,34 @@ class RecipientGuard:
     def __init__(self, allowed: list[str]) -> None:
         self._exact: set[str] = set()
         self._domains: set[str] = set()
+        # "*" lifts the boundary for this mailbox. Only for an instance whose
+        # owner accepts that an email it reads could talk it into sending.
+        self._anyone = False
         for entry in allowed:
             entry = entry.strip().lower()
             if not entry:
                 continue
-            if entry.startswith("@"):
+            if entry == "*":
+                self._anyone = True
+            elif entry.startswith("@"):
                 self._domains.add(entry[1:])
             else:
                 self._exact.add(extract_address(entry))
 
     @property
     def configured(self) -> bool:
-        return bool(self._exact or self._domains)
+        return bool(self._anyone or self._exact or self._domains)
 
     def describe(self) -> dict:
         return {
             "addresses": sorted(self._exact),
             "domains": sorted(f"@{d}" for d in self._domains),
+            "any_recipient": self._anyone,
             "sending_enabled": self.configured,
         }
 
     def _permits(self, address: str) -> bool:
-        if address in self._exact:
+        if self._anyone or address in self._exact:
             return True
         _, _, domain = address.partition("@")
         return domain in self._domains

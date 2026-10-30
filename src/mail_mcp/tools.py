@@ -175,6 +175,19 @@ def register(mcp: FastMCP, settings: Settings) -> None:
             return refused("Set confirm=true to move these messages.")
         return {"mailbox": box, **await imap.move(folder, uids, destination)}
 
+    if settings.allow_delete:
+
+        @mcp.tool(description=f"Permanently delete messages from {box}. Cannot be undone.")
+        async def mail_delete(
+            uids: list[str],
+            folder: Folder = "INBOX",
+            confirm: Confirm = False,
+        ) -> dict:
+            """Expunges for good — prefer mail_move to a Trash folder if unsure."""
+            if not confirm:
+                return refused("Set confirm=true to permanently delete these messages.")
+            return {"mailbox": box, **await imap.delete(folder, uids)}
+
     @mcp.tool(description=f"Save a draft in {box} without sending anything.")
     async def mail_save_draft(
         to: list[str],

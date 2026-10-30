@@ -30,7 +30,9 @@ that not work:
   instructions tell the model that email content is data, never instructions.
   This lowers the odds of the model being fooled; it is not what stops mail
   leaving.
-- **No delete tool.** Moving to a folder covers the need without being final.
+- **No delete tool by default.** Moving to a folder covers the need without
+  being final; `ALLOW_DELETE=true` adds `mail_delete` for a mailbox where
+  that trade-off is accepted.
 
 An empty allowlist disables sending entirely, and reading still works — a
 read-only mailbox connector is a reasonable way to run this.
@@ -57,7 +59,7 @@ others if you would rather not use GitHub; swapping is a one-line change in
 Listing never marks anything read; `mail_get` only does so if asked.
 
 **Mailbox changes** — `mail_mark`, `mail_move` (needs `confirm`),
-`mail_save_draft`
+`mail_save_draft`, `mail_delete` (only with `ALLOW_DELETE=true`, needs `confirm`)
 
 **Sending** — `mail_send`, `mail_reply`. Both need `confirm=true` **and**
 recipients on the allowlist.
@@ -107,7 +109,8 @@ Note the `/mcp` suffix; the bare domain is not the endpoint.
 | `JWT_SIGNING_KEY` | Stable key for client tokens; unset signs everyone out on restart |
 | `IMAP_*` / `SMTP_*` | Mailbox credentials |
 | `FROM_NAME` | Display name on outgoing mail |
-| `ALLOWED_RECIPIENTS` | Addresses or `@domain` entries mail may be sent to; empty disables sending |
+| `ALLOWED_RECIPIENTS` | Addresses or `@domain` entries mail may be sent to; `*` permits anyone (no boundary left); empty disables sending |
+| `ALLOW_DELETE` | `true` registers `mail_delete`, which expunges permanently; default off |
 | `DEDUP_MINUTES` | Refuse a second mail to the same recipient within this window; 0 disables |
 | `MAX_BODY_CHARS` / `MAX_ATTACHMENT_BYTES` | Size caps on what is returned |
 | `DATA_DIR` | Where the sent-mail audit log lives |
