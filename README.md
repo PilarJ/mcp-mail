@@ -108,6 +108,11 @@ state refuses. `sent_log.json` gains the kinds `approval_requested`, `approved`,
   be read without trusting unsigned headers or a structure chosen by them. A multipart
   with its own part headers, as phones and webmail send, works. If a reply is refused
   for this reason, send it from another client.
+- **The approval line must not be wrapped.** In a single-part message, a first line that
+  ends in `=` is refused, whether the body claims quoted-printable, 8bit or no encoding.
+  In quoted-printable the `=` continues the line below, and in 8bit it is part of the
+  text, so either way the line is not the bare phrase. The phrase is short, so mail
+  clients do not wrap it.
 - **The first line of a signed body means what it says.** Whoever gets the approver to
   send a message whose first line is the phrase with the code has an approval, which
   is why the code is checked and tied to one concept and one use.

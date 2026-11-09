@@ -271,6 +271,11 @@ def _single_part_line(declared: email.message.EmailMessage, line: bytes) -> str 
     """The line as written. Base64 would need an unsigned header to give it its meaning."""
     if _transfer_encoding(declared) not in _NO_ENCODING | {"quoted-printable"}:
         return None
+    # A trailing "=" means the line is not all here: in quoted-printable it is a soft break and
+    # the text goes on below, in 8bit it is a character of the text. Wrapped first lines are
+    # not supported, whatever the unsigned header claims, so neither reading can be cut short.
+    if line.rstrip(b" \t").endswith(b"="):
+        return None
     # Always UTF-8 and always this one decoding, whatever the unsigned charset and encoding
     # say. A line that reads as the phrase this way was written as the phrase.
     text = quopri.decodestring(line).decode("utf-8")
