@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import base64
-from typing import Annotated, Any
+import time
+from typing import Annotated, Any, Callable
 
 from fastmcp import FastMCP
 from imap_tools import AND
@@ -26,7 +27,13 @@ Confirm = Annotated[
 ]
 
 
-def register(mcp: FastMCP, settings: Settings) -> None:
+def register(
+    mcp: FastMCP,
+    settings: Settings,
+    *,
+    dnsfunc: Callable | None = None,
+    clock: Callable[[], float] = time.time,
+) -> None:
     box = settings.mailbox_label
     imap = ImapClient(settings)
     guard = RecipientGuard(settings.allowed_recipients)
