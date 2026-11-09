@@ -37,6 +37,63 @@ that not work:
 An empty allowlist disables sending entirely, and reading still works — a
 read-only mailbox connector is a reasonable way to run this.
 
+## Sending outside the allowlist
+
+Opening the allowlist with `*` would remove the only control an email cannot
+argue with. `APPROVER_ADDRESS` adds one narrow path instead: one specific message,
+to one recipient, after one named human has approved exactly that message by email.
+
+1. `mail_request_approval(to, subject, body)` stores a fingerprint of the concept
+   and emails the approver the full text with a one-time code. The model gets an
+   `approval_id`, never the code.
+2. The approver replies, or forwards the message back, with a first line of
+   `souhlasím <CODE>`.
+3. `mail_send_approved(approval_id, to, subject, body)` sends if the server can
+   prove the approval and the content is byte-identical. Any difference voids the
+   approval for good, and sending the original afterwards is refused too.
+
+What the server checks itself, from the raw bytes in `INBOX`. All of it fails closed:
+
+- **Sender.** Exactly one `From` header holding exactly one mailbox, parsed strictly
+  and equal to the approver as exact ASCII. Drafts are never considered, because
+  `mail_save_draft` lets the model choose the folder.
+- **DKIM.** A valid `rsa-sha256` signature with `d=` equal to the approver's domain
+  and `From` in `h=`, checked with `dkimpy` against the key in DNS. A signature with
+  `l=`, an expired `x=`, or a key marked `t=y` does not count. A DNS failure refuses.
+  `Authentication-Results` is not read at all: a receiving server may not write it
+  for its own users' mail, and a forged one looks the same as a real one.
+- **Text.** The first non-empty line of the `text/plain` part is exactly the phrase
+  with the code, in any case and with or without the diacritic. `nesouhlasím`, a
+  quote, a forwarded block or the concept itself approve nothing. A reply that puts
+  the phrase below a quote approves nothing either.
+- **Code and lifetime.** The code has about 49 bits from `secrets`, is stored as a
+  salted hash and belongs to one concept. Expiry uses server time and IMAP
+  `INTERNALDATE`, never the `Date` header. The approval is spent atomically before
+  SMTP, so two concurrent calls send once, and after an SMTP failure a new one must
+  be requested.
+
+State lives in `approvals.sqlite3` in `DATA_DIR`. It survives restarts, and unreadable
+state refuses. `sent_log.json` gains the kinds `approval_requested`, `approved`,
+`approval_voided` and `sent_approved`; only the last one counts for `DEDUP_MINUTES`.
+
+### Limits of this feature
+
+- **DKIM proves the domain, not the person.** Exact `From` matching covers mailbox
+  identity only as far as the mail provider stops one authenticated user sending as
+  another address on the same domain. Anyone who can send as the approver can approve.
+- **The code is not a secret once it is in the mailbox.** The approval tools never
+  return it, but the approver's reply quotes it into `INBOX`, and a provider that
+  files SMTP mail under Sent keeps a copy there, where the read tools can reach it.
+  This is safe because knowing the code does not help: only a message signed for the
+  approver's domain with the approver in `From` can use it. The MCP tools cannot set
+  `From`.
+- **The approver is the last check on the content.** The server guarantees that what
+  goes out is what they were shown, not that it is wise to send.
+- **A flood can hide an approval.** Only the newest 50 messages from the search are
+  checked. Forged mail can delay a real approval this way, but it cannot create one.
+- **Status does not name the approver.** `mail_status` and
+  `mail_list_allowed_recipients` report `approval_enabled` when it is on.
+
 ## Why a GitHub OAuth app?
 
 GitHub is only the login screen; it has nothing to do with your mail. Remote
@@ -64,6 +121,9 @@ Listing never marks anything read; `mail_get` only does so if asked.
 **Sending** — `mail_send`, `mail_reply`. Both need `confirm=true` **and**
 recipients on the allowlist.
 
+**Approved sending** — `mail_request_approval`, `mail_send_approved`. Registered
+only with `APPROVER_ADDRESS` set; see below.
+
 ## Setup
 
 ### 1. GitHub OAuth app
@@ -80,6 +140,11 @@ is not supported.
 Point `IMAP_HOST` at your provider's real mail server. If your domain sits
 behind a CDN, `imap.yourdomain` may resolve to the CDN, which does not carry
 IMAP — use the hostname your provider documents.
+
+IMAP and SMTP verify the certificate and the hostname. `IMAP_HOST` and `SMTP_HOST`
+must be names the server's certificate is issued for, and an alias that is not on the
+certificate fails to connect. For a private CA, point `SSL_CERT_FILE` at its
+certificate.
 
 ### 3. Run
 
@@ -112,8 +177,11 @@ Note the `/mcp` suffix; the bare domain is not the endpoint.
 | `ALLOWED_RECIPIENTS` | Addresses or `@domain` entries mail may be sent to; `*` permits anyone (no boundary left); empty disables sending |
 | `ALLOW_DELETE` | `true` registers `mail_delete`, which expunges permanently; default off |
 | `DEDUP_MINUTES` | Refuse a second mail to the same recipient within this window; 0 disables |
+| `APPROVER_ADDRESS` | Sole approver for sending outside the allowlist; unset removes the two tools; invalid or this mailbox's own address stops the server |
+| `APPROVAL_TTL_HOURS` | How long a request stays valid; default 72 |
+| `APPROVAL_MAX_PER_HOUR` / `APPROVAL_MAX_PENDING` | Limits on requests to the approver; defaults 5 and 10 |
 | `MAX_BODY_CHARS` / `MAX_ATTACHMENT_BYTES` | Size caps on what is returned |
-| `DATA_DIR` | Where the sent-mail audit log lives |
+| `DATA_DIR` | Where the sent-mail audit log and the approval state live |
 
 ## Notes
 
@@ -123,6 +191,16 @@ login per call and avoids nursing a long-lived socket.
 
 Every send is appended to `sent_log.json` in `DATA_DIR`, readable through
 `mail_sent_log` — worth checking after giving an agent access to a mailbox.
+
+## Tests
+
+```bash
+pip install -e ".[dev]"
+pytest
+```
+
+Nothing touches the network: IMAP, SMTP and DNS are fakes, and the certificate tests
+use real TLS over loopback.
 
 ## Licence
 
