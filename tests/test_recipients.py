@@ -23,6 +23,7 @@ AMBIGUOUS = [
     pytest.param(f"{ALLOWLISTED} <{ATTACKER}>", id="bare-display-name"),
     pytest.param(f'"x {ALLOWLISTED} y" <{ATTACKER}>', id="address-inside-display-name"),
     pytest.param(f'"{ATTACKER}" <{ALLOWLISTED}>', id="other-address-in-display-name"),
+    pytest.param(f"{ATTACKER} <{ALLOWLISTED}>", id="other-address-in-bare-display-name"),
     pytest.param(f"{ALLOWLISTED}, {ATTACKER}", id="two-addresses"),
     pytest.param(f"{ALLOWLISTED}; {ATTACKER}", id="semicolon-list"),
     pytest.param(f"{ALLOWLISTED} {ATTACKER}", id="space-separated"),
@@ -182,10 +183,9 @@ async def test_approval_recipient_with_percent_routing_is_refused(harness):
 
 
 async def test_approved_send_uses_the_same_address_in_the_envelope(harness):
-    commands = harness.capture_envelope()
     pending = await harness.request()
     harness.approve(pending)
-    commands.clear()
+    commands = harness.capture_envelope()
     result = await harness.send(pending)
     assert result["status"] == "sent", result
     assert rcpt(commands) == [pending.to]

@@ -121,9 +121,55 @@ async def test_a_second_mime_header_refuses(harness, keys, added):
 
 
 async def test_mime_header_with_space_before_the_colon_refuses(harness, keys):
+    """dkimpy cannot parse this one at all, so there is no signature check to get past."""
     pending = await harness.request()
     signed = dkim_sign(plain_message(encoded_phrase(pending.code)), keys["approver"])
-    await assert_signed_and_refused(harness, pending, b"Content-Transfer-Encoding : base64\r\n" + signed)
+    harness.deliver(b"Content-Transfer-Encoding : base64\r\n" + signed)
+    result = await harness.send(pending)
+    assert result["status"] == "refused", result
+    assert harness.delivered() == []
+
+
+async def test_declared_base64_over_a_written_phrase_refuses(harness, keys):
+    """The header and the octets disagree. Readers would differ, so nobody gets to choose."""
+    pending = await harness.request()
+    signed = dkim_sign(plain_message(f"souhlasim {pending.code}\n"), keys["approver"])
+    tampered = swapped(signed, b"Content-Transfer-Encoding: 8bit", b"Content-Transfer-Encoding: base64")
+    await assert_signed_and_refused(harness, pending, tampered)
+
+
+@pytest.mark.parametrize(
+    "first_line",
+    [
+        pytest.param("=0Asouhlasim {code}", id="decoded-line-feed"),
+        pytest.param("=0D=0Asouhlasim {code}", id="decoded-crlf"),
+        pytest.param("=0Bsouhlasim {code}", id="decoded-vertical-tab"),
+        pytest.param("=E2=80=A8souhlasim {code}", id="decoded-line-separator"),
+    ],
+)
+async def test_quoted_printable_line_break_cannot_start_a_new_first_line(harness, keys, first_line):
+    pending = await harness.request()
+    text = first_line.format(code=pending.code)
+    signed = dkim_sign(plain_message(f"{text}\n"), keys["approver"])
+    tampered = swapped(signed, b"Content-Transfer-Encoding: 8bit", b"Content-Transfer-Encoding: quoted-printable")
+    await assert_signed_and_refused(harness, pending, tampered)
+
+
+async def test_malformed_content_type_over_a_written_phrase_refuses(harness, keys):
+    pending = await harness.request()
+    signed = dkim_sign(plain_message(f"souhlasim {pending.code}\n"), keys["approver"])
+    tampered = swapped(signed, b'Content-Type: text/plain; charset="utf-8"', b"Content-Type: garbage")
+    await assert_signed_and_refused(harness, pending, tampered)
+
+
+async def test_part_with_invalid_base64_refuses_even_if_it_decodes_to_the_phrase(harness, keys):
+    pending = await harness.request()
+    encoded = encoded_phrase(pending.code)
+    raw = _crlf(
+        head('multipart/alternative; boundary="B"')
+        + f"--B\nContent-Type: text/plain; charset=utf-8\nContent-Transfer-Encoding: base64\n\n!{encoded}--B--\n"
+    )
+    await assert_signed_and_refused(harness, pending, dkim_sign(raw, keys["approver"]))
 
 
 async def test_transfer_encoding_on_a_multipart_refuses(harness, keys):
@@ -193,6 +239,7 @@ async def test_selecting_another_boundary_in_a_signed_multipart(harness, keys):
             id="two-content-types-in-the-part",
         ),
         pytest.param("--B\nno colon in this header\n\nsouhlasim {code}\n--B--\n", id="malformed-part-header"),
+        pytest.param("--B\nContent-Type : text/plain\n\nsouhlasim {code}\n--B--\n", id="space-before-colon-in-part"),
         pytest.param(
             "--B\nContent-Type: text/plain\nContent-Transfer-Encoding: base64\n\n!!!not base64!!!\n--B--\n",
             id="broken-base64",

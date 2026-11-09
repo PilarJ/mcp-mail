@@ -418,6 +418,7 @@ class Harness:
         commands: list[str] = []
         smtp_class = type("BoundEnvelopeSmtp", (EnvelopeSmtp,), {"commands": commands})
         self.monkeypatch.setattr("mail_mcp.smtp.smtplib.SMTP", smtp_class)
+        self.monkeypatch.setattr("mail_mcp.smtp.smtplib.SMTP_SSL", smtp_class)
         return commands
 
     def imap_box(self) -> FakeMailBox:
