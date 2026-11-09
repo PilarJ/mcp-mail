@@ -15,6 +15,7 @@ import anyio
 from imap_tools import AND, MailBox, MailMessageFlags
 
 from .settings import Settings
+from .tls import client_context
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +30,9 @@ class ImapClient:
 
     def _run(self, fn: Callable[[MailBox], Any], folder: str = "INBOX") -> Any:
         try:
-            with MailBox(self._s.imap_host, port=self._s.imap_port).login(
-                self._s.imap_user, self._s.imap_pass, initial_folder=folder
-            ) as mailbox:
+            with MailBox(
+                self._s.imap_host, port=self._s.imap_port, ssl_context=client_context()
+            ).login(self._s.imap_user, self._s.imap_pass, initial_folder=folder) as mailbox:
                 return fn(mailbox)
         except Exception as exc:
             raise MailError(f"IMAP error: {exc}") from exc
