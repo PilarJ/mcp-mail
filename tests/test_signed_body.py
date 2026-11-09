@@ -155,6 +155,58 @@ async def test_quoted_printable_line_break_cannot_start_a_new_first_line(harness
     await assert_signed_and_refused(harness, pending, tampered)
 
 
+
+# A first physical line ending in "=" is not the whole first line. In quoted-printable the
+# "=" is a soft break and the line goes on below; in 8bit the "=" is part of the text. Either
+# way, decoding that one physical line on its own would read an approval nobody wrote.
+CONTINUED = [
+    pytest.param("{phrase}=\n ale ne\n", id="soft-break"),
+    pytest.param("{phrase}= \t\n ale ne\n", id="soft-break-with-trailing-space"),
+    pytest.param("{phrase}=\n\n", id="soft-break-before-an-empty-line"),
+]
+
+
+@pytest.mark.parametrize("body", CONTINUED)
+@pytest.mark.parametrize(
+    "encoding",
+    [
+        pytest.param("Content-Transfer-Encoding: quoted-printable", id="quoted-printable"),
+        pytest.param("Content-Transfer-Encoding: 8bit", id="8bit"),
+        pytest.param(None, id="no-transfer-encoding"),
+    ],
+)
+async def test_first_line_ending_in_an_equals_sign_refuses(harness, keys, encoding, body):
+    pending = await harness.request()
+    extra = (encoding,) if encoding else ()
+    text = body.format(phrase=f"souhlasim {pending.code}")
+    raw = _crlf(head('text/plain; charset="utf-8"', *extra) + text)
+    await assert_signed_and_refused(harness, pending, dkim_sign(raw, keys["approver"]))
+
+
+async def test_signed_8bit_line_with_an_equals_sign_relabelled_as_quoted_printable(harness, keys):
+    """The approver wrote a literal "=". Calling the body quoted-printable must not drop it."""
+    pending = await harness.request()
+    signed = dkim_sign(plain_message(f"souhlasim {pending.code}=\nale ne\n"), keys["approver"])
+    tampered = swapped(signed, b"Content-Transfer-Encoding: 8bit", b"Content-Transfer-Encoding: quoted-printable")
+    await assert_signed_and_refused(harness, pending, tampered)
+
+
+def test_a_truncated_quoted_printable_line_reads_as_no_approval():
+    """The reviewer's helper-level check: one physical line ending in "=" is not a line."""
+    from email import policy
+    from email.parser import BytesParser
+
+    from mail_mcp.approval import _single_part_line, approval_code_in
+
+    for header in (b"quoted-printable", b"8bit"):
+        declared = BytesParser(policy=policy.default).parsebytes(
+            b"Content-Transfer-Encoding: " + header + b"\r\n\r\n"
+        )
+        extracted = _single_part_line(declared, b"souhlasim ABCDE-FGHJK=")
+        assert approval_code_in(extracted or "") is None, header
+        # RFC 2045 drops whitespace after a soft break, and so does a full MIME decoder.
+        assert _single_part_line(declared, b"souhlasim ABCDE-FGHJK= \t") is None, header
+
 async def test_malformed_content_type_over_a_written_phrase_refuses(harness, keys):
     pending = await harness.request()
     signed = dkim_sign(plain_message(f"souhlasim {pending.code}\n"), keys["approver"])
@@ -304,6 +356,11 @@ GENUINE = [
         lambda code: _crlf(head('text/plain; charset="utf-8"', "Content-Transfer-Encoding: quoted-printable")
                            + f"souhlas=C3=ADm {code}\n\nOdesl=C3=A1no z iPhonu\n"),
         id="single-part-quoted-printable",
+    ),
+    pytest.param(
+        lambda code: _crlf(head('text/plain; charset="utf-8"', "Content-Transfer-Encoding: quoted-printable")
+                           + f"souhlas=C3=ADm {code}\n\nDlouh=C3=BD podpis, kter=C3=BD klient zalomil=\n a pokra=C4=8Duje.\n"),
+        id="quoted-printable-with-a-soft-break-below-the-first-line",
     ),
     pytest.param(
         lambda code: _crlf(head("text/plain") + f"souhlasim {code}\n"),
