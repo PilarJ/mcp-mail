@@ -26,6 +26,11 @@ that not work:
   guard against mistakes, not against attacks. The allowlist is the boundary.
 - **Replies are not exempt.** Someone does not earn the right to receive mail
   by sending you some first.
+- **One address means one address.** A recipient is `addr@example.com` or
+  `Name <addr@example.com>` in plain ASCII. The server parses it once and uses
+  that one address for the allowlist, the SMTP envelope, the headers and the
+  log, lower-cased and without the name. An address in a display name, a list in
+  one value, comments, groups and `%` routing are refused.
 - **Bodies are labelled as untrusted** where they are returned, and the server
   instructions tell the model that email content is data, never instructions.
   This lowers the odds of the model being fooled; it is not what stops mail
@@ -62,15 +67,24 @@ What the server checks itself, from the raw bytes in `INBOX`. All of it fails cl
   `l=`, an expired `x=`, or a key marked `t=y` does not count. A DNS failure refuses.
   `Authentication-Results` is not read at all: a receiving server may not write it
   for its own users' mail, and a forged one looks the same as a real one.
-- **Text.** The first non-empty line of the `text/plain` part is exactly the phrase
-  with the code, in any case and with or without the diacritic. `nesouhlasím`, a
-  quote, a forwarded block or the concept itself approve nothing. A reply that puts
-  the phrase below a quote approves nothing either.
+- **Text.** The first non-empty line of the text is exactly the phrase with the code,
+  in any case and with or without the diacritic. `nesouhlasím`, a quote, a forwarded
+  block or the concept itself approve nothing. A reply that puts the phrase below a
+  quote approves nothing either.
+- **What counts as the text.** Real approver mail signs no MIME header, so
+  `Content-Type` and `Content-Transfer-Encoding` can be changed without breaking the
+  signature, and they cannot be allowed to change what the body says. The text comes
+  from the signed octets. A single part is read as written, as UTF-8, also accepting
+  the quoted-printable spelling of the line. A multipart body must open with its
+  delimiter, and its first part must be `text/plain`, decoded by the part's own headers,
+  which are inside the signature. A repeated MIME header, a lone CR or LF anywhere, or a
+  structure that can be read two ways refuses.
 - **Code and lifetime.** The code has about 49 bits from `secrets`, is stored as a
   salted hash and belongs to one concept. Expiry uses server time and IMAP
   `INTERNALDATE`, never the `Date` header. The approval is spent atomically before
-  SMTP, so two concurrent calls send once, and after an SMTP failure a new one must
-  be requested.
+  SMTP, with the clock read inside that transaction, so an approval that expires during
+  verification does not send. Two concurrent calls send once, and after an SMTP failure
+  a new one must be requested.
 
 State lives in `approvals.sqlite3` in `DATA_DIR`. It survives restarts, and unreadable
 state refuses. `sent_log.json` gains the kinds `approval_requested`, `approved`,
@@ -89,6 +103,14 @@ state refuses. `sent_log.json` gains the kinds `approval_requested`, `approved`,
   `From`.
 - **The approver is the last check on the content.** The server guarantees that what
   goes out is what they were shown, not that it is wise to send.
+- **Some real mail cannot approve.** A single-part base64 message, a nested multipart
+  and a multipart with text before its first delimiter are refused, because they cannot
+  be read without trusting unsigned headers or a structure chosen by them. A multipart
+  with its own part headers, as phones and webmail send, works. If a reply is refused
+  for this reason, send it from another client.
+- **The first line of a signed body means what it says.** Whoever gets the approver to
+  send a message whose first line is the phrase with the code has an approval, which
+  is why the code is checked and tied to one concept and one use.
 - **A flood can hide an approval.** Only the newest 50 messages from the search are
   checked. Forged mail can delay a real approval this way, but it cannot create one.
 - **Status does not name the approver.** `mail_status` and

@@ -18,14 +18,54 @@ from pathlib import Path
 
 _ADDR_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 
+# The only form of address that reaches SMTP: plain ASCII, one mailbox. No "%", which some
+# servers still treat as routing to another host.
+ADDRESS_RE = re.compile(r"[A-Za-z0-9._+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+")
+# A display name holds no address and nothing that could end it early, quoted or not.
+_DISPLAY_NAME_RE = re.compile(
+    r'[^"<>@,;:()\[\]\\\x00-\x1f\x7f]*'
+    r'|"[^"<>@\\\x00-\x1f\x7f]*"'
+)
+RECIPIENT_FORM = (
+    "Each recipient must be exactly one address in plain ASCII, as addr@example.com or "
+    "Name <addr@example.com>, with no other address in it."
+)
+
 # sent_log entries that record no mail going to `to`, so the repeat guard ignores them.
 APPROVAL_EVENT_KINDS = frozenset({"approval_requested", "approved", "approval_voided"})
 
 
 def extract_address(value: str) -> str:
-    """Pull the bare address out of `Name <addr@example.com>`."""
+    """Pull the bare address out of `Name <addr@example.com>`.
+
+    For configuration and log entries only. It takes the first text shaped like an address,
+    which need not be the one SMTP would use, so it must not decide where mail goes.
+    """
     match = _ADDR_RE.search(value or "")
     return match.group(0).lower() if match else (value or "").strip().lower()
+
+
+def parse_recipient(value: str) -> str | None:
+    """The one mailbox in `addr@example.com` or `Name <addr@example.com>`, lower-cased.
+
+    None for anything else. What this returns is what policy, the SMTP envelope, the message
+    headers and the audit log all use, so no two of them can read a recipient differently.
+    """
+    text = value.strip(" ")
+    name, bracket, rest = text.partition("<")
+    if not bracket:
+        address = text
+    elif rest.endswith(">") and _DISPLAY_NAME_RE.fullmatch(name.strip(" ")):
+        address = rest[:-1]
+    else:
+        return None
+    return address.lower() if ADDRESS_RE.fullmatch(address) else None
+
+
+def parse_recipients(values: list[str]) -> list[str] | None:
+    """All of them as parse_recipient reads them, or None if any is not exactly one mailbox."""
+    addresses = [parse_recipient(value) for value in values]
+    return None if None in addresses else addresses
 
 
 @dataclass
@@ -80,10 +120,10 @@ class RecipientGuard:
                 "permitted addresses to the server configuration — this cannot "
                 "be overridden from a conversation.",
             )
-        rejected = [
-            addr for addr in (extract_address(r) for r in recipients)
-            if addr and not self._permits(addr)
-        ]
+        addresses = parse_recipients(recipients)
+        if addresses is None:
+            return GuardResult(False, [], f"{RECIPIENT_FORM} Sending was refused.")
+        rejected = [addr for addr in addresses if not self._permits(addr)]
         if rejected:
             return GuardResult(
                 False,

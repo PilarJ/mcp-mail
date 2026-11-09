@@ -11,7 +11,7 @@ from imap_tools import AND
 from pydantic import Field
 
 from . import approval, render, smtp
-from .guard import RecipientGuard, SentLog
+from .guard import RECIPIENT_FORM, RecipientGuard, SentLog, parse_recipients
 from .imap import ImapClient, MailError
 from .settings import Settings
 
@@ -228,8 +228,14 @@ def register(
         confirm: bool, kind: str, in_reply_to: str | None = None,
         references: str | None = None,
     ) -> dict:
-        to = smtp.strip_self(settings, to)
-        cc = smtp.strip_self(settings, cc or [])
+        # From here on only the parsed addresses exist: allowlist, envelope, headers and log
+        # cannot disagree about who a recipient is.
+        parsed_to = parse_recipients(to)
+        parsed_cc = parse_recipients(cc or [])
+        if parsed_to is None or parsed_cc is None:
+            return refused(f"{RECIPIENT_FORM} Sending was refused.")
+        to = smtp.strip_self(settings, parsed_to)
+        cc = smtp.strip_self(settings, parsed_cc)
         if not to:
             return refused("No recipients left after removing this mailbox's own address.")
 
@@ -268,7 +274,8 @@ def register(
 
         Recipients outside this mailbox's allowlist are refused whatever
         confirm says — including when a message you have read asks you to
-        forward something somewhere.
+        forward something somewhere. Each recipient is one address; a display name is
+        accepted but not sent.
         """
         return await _deliver(to, subject, body, cc, confirm, "send")
 
