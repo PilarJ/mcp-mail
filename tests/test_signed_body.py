@@ -222,6 +222,10 @@ async def test_selecting_another_boundary_in_a_signed_multipart(harness, keys):
     "body",
     [
         pytest.param("Úvod před první částí.\n--B\nContent-Type: text/plain\n\nsouhlasim {code}\n--B--\n", id="preamble"),
+        pytest.param(
+            "Úvod před první částí.\n\nsouhlasim {code}\n--B\nContent-Type: text/plain\n\nObyčejný text.\n--B--\n",
+            id="preamble-shaped-like-a-part",
+        ),
         pytest.param("--B\nContent-Type: text/plain\n\nsouhlasim {code}\n", id="no-closing-delimiter"),
         pytest.param("--B\nContent-Type: text/plain\n\nsouhlasim {code}\n--Bx\nnoise\n--B--\n", id="look-alike-delimiter"),
         pytest.param("--B\nContent-Type: text/html\n\nsouhlasim {code}\n--B--\n", id="first-part-html"),
