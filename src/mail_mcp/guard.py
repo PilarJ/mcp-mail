@@ -18,6 +18,9 @@ from pathlib import Path
 
 _ADDR_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 
+# sent_log entries that record no mail going to `to`, so the repeat guard ignores them.
+APPROVAL_EVENT_KINDS = frozenset({"approval_requested", "approved", "approval_voided"})
+
 
 def extract_address(value: str) -> str:
     """Pull the bare address out of `Name <addr@example.com>`."""
@@ -112,7 +115,7 @@ class SentLog:
         cutoff = (datetime.now() - timedelta(minutes=self._dedup_minutes)).isoformat()
         targets = {extract_address(r) for r in recipients}
         for entry in self._read():
-            if entry.get("sent_at", "") < cutoff:
+            if entry.get("sent_at", "") < cutoff or entry.get("kind") in APPROVAL_EVENT_KINDS:
                 continue
             if extract_address(entry.get("to", "")) in targets:
                 return entry.get("sent_at", "")

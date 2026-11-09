@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import json
 import stat
+from types import SimpleNamespace
 
+import dns.exception
+import dns.rdataclass
+import dns.rdatatype
+import dns.rdtypes.ANY.TXT
+import dns.resolver
 import pytest
 
 from .support import (
@@ -168,7 +174,7 @@ async def test_not_yet_approved_is_a_clear_refusal(harness):
     pending = await harness.request()
     result = await harness.send(pending)
     assert result["status"] == "refused"
-    assert "No approval" in result["detail"]
+    assert "No approval has arrived" in result["detail"]
     # and not fatal: the approval can still arrive
     harness.approve(pending)
     assert (await harness.send(pending))["status"] == "sent"
@@ -477,3 +483,172 @@ def test_code_has_at_least_40_bits_and_is_easy_to_type():
     codes = {new_code() for _ in range(100)}
     assert len(codes) == 100
     assert all(len(code.replace("-", "")) == CODE_LENGTH for code in codes)
+
+
+# ---------------------------------------------------------------- server start
+
+
+def test_main_exits_on_a_bad_approver_and_names_no_address(tmp_path, monkeypatch):
+    from mail_mcp import server
+
+    from .support import make_settings
+
+    def must_not_serve(_settings):
+        raise AssertionError("the server started with a bad APPROVER_ADDRESS")
+
+    bad = make_settings(tmp_path, APPROVER_ADDRESS=MAILBOX)
+    monkeypatch.setattr(server, "load_settings", lambda: bad)
+    monkeypatch.setattr(server, "build_server", must_not_serve)
+    with pytest.raises(SystemExit) as excinfo:
+        server.main()
+    assert "APPROVER_ADDRESS" in str(excinfo.value)
+    assert MAILBOX not in str(excinfo.value)
+
+
+@pytest.mark.parametrize("approver", ["", APPROVER], ids=["unset", "set"])
+def test_server_instructions_mention_approval_only_when_enabled(tmp_path, approver):
+    from mail_mcp.server import build_server
+
+    from .support import make_settings
+
+    settings = make_settings(tmp_path, APPROVER_ADDRESS=approver, JWT_SIGNING_KEY="k" * 40)
+    instructions = build_server(settings).instructions
+    assert ("mail_request_approval" in instructions) is bool(approver)
+    assert APPROVER not in instructions
+
+
+# ---------------------------------------------------------------- reading IMAP responses
+
+
+def test_fetch_metadata_is_read_around_the_literal_not_from_it():
+    from mail_mcp.imap import parse_fetch_response, parse_flags, parse_internaldate
+
+    raw = b'From: a\r\n\r\nFLAGS (\\Seen) INTERNALDATE "01-Jan-2000 00:00:00 +0000"'
+    data = [
+        (b"1 (UID 5 BODY[] {70}", raw),
+        b' FLAGS (\\Draft) INTERNALDATE " 9-Nov-2026 10:00:00 +0100")',
+    ]
+    meta, literal = parse_fetch_response(data)
+    assert literal == raw
+    assert parse_flags(meta) == {"\\Draft"}
+    assert parse_internaldate(meta) == 1794214800.0
+
+
+@pytest.mark.parametrize("meta", [b"1 (UID 5)", b'1 (INTERNALDATE "yesterday")'], ids=["missing", "garbage"])
+def test_unusable_internaldate_is_none(meta):
+    from mail_mcp.imap import parse_internaldate
+
+    assert parse_internaldate(meta) is None
+
+
+async def test_message_without_internaldate_is_refused(harness, monkeypatch):
+    from mail_mcp import approval as approval_module
+
+    pending = await harness.request()
+    harness.approve(pending)
+    real = approval_module.ImapClient.approval_candidates
+
+    async def without_date(self, *args):
+        messages = await real(self, *args)
+        return [type(m)(m.uid, m.raw, m.flags, None) for m in messages]
+
+    monkeypatch.setattr(approval_module.ImapClient, "approval_candidates", without_date)
+    assert (await harness.send(pending))["status"] == "refused"
+    assert harness.delivered() == []
+
+
+async def test_oversized_message_is_not_verified(harness, monkeypatch, keys):
+    from mail_mcp import approval as approval_module
+
+    monkeypatch.setattr(approval_module, "MAX_MESSAGE_BYTES", 100)
+    pending = await harness.request()
+    harness.approve(pending)
+    result = await harness.send(pending)
+    assert result["status"] == "refused"
+    assert "too large" in result["detail"]
+
+
+async def test_imap_failure_refuses_without_naming_the_approver(harness, monkeypatch):
+    pending = await harness.request()
+    harness.approve(pending)
+
+    def broken(self, _criteria="ALL", **_):
+        raise RuntimeError(f'SEARCH failed: FROM "{APPROVER}"')
+
+    monkeypatch.setattr(type(harness.imap_box()), "uids", broken)
+    result = await harness.send(pending)
+    assert result["status"] == "refused"
+    assert APPROVER not in str(result)
+    assert harness.delivered() == []
+
+
+# ---------------------------------------------------------------- the real DNS code path
+
+
+@pytest.fixture
+def real_dns_harness(harness, monkeypatch):
+    """dkimpy's own lookup through dnspython, with only dnspython's resolve() replaced."""
+    from fastmcp import FastMCP
+
+    from mail_mcp import tools
+
+    harness.mcp = FastMCP("test")
+    tools.register(harness.mcp, harness.settings, clock=lambda: harness.now)
+    return harness
+
+
+async def test_real_dns_lookup_path_success(real_dns_harness, keys, monkeypatch):
+    harness = real_dns_harness
+    txt = keys["approver"].txt()
+    chunks = [txt[i : i + 255] for i in range(0, len(txt), 255)]
+    record = dns.rdtypes.ANY.TXT.TXT(dns.rdataclass.IN, dns.rdatatype.TXT, chunks)
+    answer = SimpleNamespace(rdtype=dns.rdatatype.TXT, items={record: None})
+    queries = []
+
+    def resolve(name, *_args, **_kwargs):
+        queries.append(name)
+        return SimpleNamespace(response=SimpleNamespace(answer=[answer]))
+
+    monkeypatch.setattr("dns.resolver.resolve", resolve)
+    pending = await harness.request()
+    harness.approve(pending)
+    assert (await harness.send(pending))["status"] == "sent"
+    assert queries == ["sel._domainkey.example.com."]
+
+
+@pytest.mark.parametrize(
+    ("error", "expected"),
+    [
+        pytest.param(lambda: dns.exception.Timeout(), "DNS lookup", id="timeout"),
+        pytest.param(lambda: dns.resolver.NXDOMAIN(), "no key", id="nxdomain"),
+        pytest.param(lambda: dns.resolver.NoNameservers(), "no key", id="no-nameservers"),
+        pytest.param(lambda: OSError("network unreachable"), "DNS lookup", id="os-error"),
+    ],
+)
+async def test_real_dns_lookup_path_failures_refuse(real_dns_harness, monkeypatch, error, expected):
+    harness = real_dns_harness
+
+    def resolve(*_args, **_kwargs):
+        raise error()
+
+    monkeypatch.setattr("dns.resolver.resolve", resolve)
+    pending = await harness.request()
+    harness.approve(pending)
+    result = await harness.send(pending)
+    assert result["status"] == "refused"
+    assert expected in result["detail"]
+    assert harness.delivered() == []
+
+
+async def test_surprise_while_checking_a_message_refuses(harness, monkeypatch):
+    pending = await harness.request()
+    harness.approve(pending)
+
+    def explode(*_args, **_kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr("mail_mcp.approval._plain_text", explode)
+    result = await harness.send(pending)
+    assert result["status"] == "refused"
+    assert "boom" not in str(result)
+    assert harness.delivered() == []

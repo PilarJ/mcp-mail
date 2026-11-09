@@ -75,6 +75,7 @@ def dkim_sign(
     headers: tuple[str, ...] = REAL_REPLY_HEADERS,
     canonicalization: bytes = b"simple/simple",
     expires: int | None = None,
+    signed_at: int | None = None,
     body_length: bool = False,
 ) -> bytes:
     """Prepend a signature. Built by hand because dkim.sign refuses the bad ones we need."""
@@ -91,7 +92,7 @@ def dkim_sign(
         (b"c", canonicalization),
         (b"d", domain),
         (b"s", selector),
-        (b"t", str(int(time.time())).encode()),
+        (b"t", str(signed_at if signed_at is not None else int(time.time())).encode()),
     ]
     if expires is not None:
         fields.append((b"x", str(expires).encode()))
@@ -358,7 +359,7 @@ class Harness:
         self.dns_error: Exception | None = None
         self.dns_queries: list[str] = []
 
-        box_class = type("BoundMailBox", (FakeMailBox,), {"server": self.imap})
+        self.box_class = box_class = type("BoundMailBox", (FakeMailBox,), {"server": self.imap})
         smtp_class = type(
             "BoundSmtp",
             (FakeSmtp,),
@@ -375,6 +376,9 @@ class Harness:
         """Register the tools. Calling it again is what a server restart does."""
         self.mcp = FastMCP("test")
         tools.register(self.mcp, self.settings, dnsfunc=self.dns_lookup, clock=lambda: self.now)
+
+    def imap_box(self) -> FakeMailBox:
+        return self.box_class()
 
     def dns_lookup(self, name, timeout: int = 5):
         name = name.decode() if isinstance(name, bytes) else name

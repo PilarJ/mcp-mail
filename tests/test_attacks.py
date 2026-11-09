@@ -37,6 +37,11 @@ async def assert_refused(harness, pending) -> dict:
     return result
 
 
+async def assert_refused_signed(harness, pending, raw, keys, **sign_options) -> dict:
+    harness.deliver(dkim_sign(raw, keys["approver"], **sign_options))
+    return await assert_refused(harness, pending)
+
+
 # ---------------------------------------------------------------- DKIM: forged and missing
 
 
@@ -132,8 +137,11 @@ async def test_rsa_sha1_signature(harness, keys):
 async def test_expired_x_tag(harness, keys, age_seconds):
     pending = await harness.request()
     raw = iphone_reply(f"souhlasím {pending.code}")
-    harness.deliver(dkim_sign(raw, keys["approver"], expires=int(time.time()) - age_seconds))
-    await assert_refused(harness, pending)
+    expires = int(time.time()) - age_seconds
+    # t= before x=, otherwise dkimpy refuses it for that reason and proves nothing here
+    harness.deliver(dkim_sign(raw, keys["approver"], expires=expires, signed_at=expires - 3600))
+    result = await assert_refused(harness, pending)
+    assert "expired" in result["detail"]
 
 
 @pytest.mark.parametrize("flags", [b"t=y; ", b"t=y:s; ", b"t=s:y; "], ids=["y", "y-s", "s-y"])
@@ -141,6 +149,14 @@ async def test_dns_key_with_testing_flag(harness, keys, flags):
     pending = await harness.request()
     harness.dns["sel._domainkey.example.com."] = keys["approver"].txt(flags)
     harness.deliver(dkim_sign(iphone_reply(f"souhlasím {pending.code}"), keys["approver"]))
+    await assert_refused(harness, pending)
+
+
+async def test_key_below_dkimpys_minimum_size(harness, keys, monkeypatch):
+    """cryptography will not make such a key, so have dkimpy measure this one as small."""
+    pending = await harness.request()
+    harness.deliver(dkim_sign(iphone_reply(f"souhlasím {pending.code}"), keys["approver"]))
+    monkeypatch.setattr("dkim.bitsize", lambda _modulus: 512)
     await assert_refused(harness, pending)
 
 
@@ -233,7 +249,8 @@ async def test_two_from_headers(harness, keys, second):
     pending = await harness.request()
     signed = dkim_sign(iphone_reply(f"souhlasím {pending.code}"), keys["approver"])
     harness.deliver(second.encode() + signed)
-    await assert_refused(harness, pending)
+    result = await assert_refused(harness, pending)
+    assert "From" in result["detail"]
 
 
 async def test_second_from_after_the_signed_one(harness, keys):
@@ -241,7 +258,16 @@ async def test_second_from_after_the_signed_one(harness, keys):
     signed = dkim_sign(iphone_reply(f"souhlasím {pending.code}"), keys["approver"])
     head, _, rest = signed.partition(b"\r\n\r\n")
     harness.deliver(head + b"\r\nFrom: attacker@evil.example\r\n\r\n" + rest)
-    await assert_refused(harness, pending)
+    result = await assert_refused(harness, pending)
+    assert "From" in result["detail"]
+
+
+async def test_two_from_headers_both_covered_by_a_valid_signature(harness, keys):
+    """The signature verifies, so only counting the From headers can refuse this."""
+    pending = await harness.request()
+    raw = plain_message(f"souhlasím {pending.code}", extra_headers=("From: attacker@evil.example",))
+    result = await assert_refused_signed(harness, pending, raw, keys, headers=("From", "From", "Subject"))
+    assert "exactly one From" in result["detail"]
 
 
 async def test_unix_from_line_is_refused(harness, keys):
