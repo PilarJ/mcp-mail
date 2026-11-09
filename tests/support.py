@@ -12,11 +12,13 @@ import email
 import json
 import quopri
 import re
+import smtplib
 import time
 from dataclasses import dataclass, field
 from email import policy
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Callable
 
 import dkim
 from cryptography.hazmat.primitives import serialization
@@ -337,6 +339,38 @@ class FakeSmtp:
         return None
 
 
+class EnvelopeSmtp(smtplib.SMTP):
+    """The real smtplib down to the socket, so `commands` holds the real RCPT TO lines."""
+
+    commands: list[str]  # set on the subclass made by Harness.capture_envelope
+
+    def __init__(self, _host: str = "", _port: int = 0, timeout: int = 0, context=None) -> None:
+        super().__init__()  # no host: no connection
+        self._last_command = ""
+
+    def starttls(self, context=None) -> tuple[int, bytes]:
+        return 220, b"ready"
+
+    def login(self, _user: str, _password: str) -> tuple[int, bytes]:
+        return 235, b"ok"
+
+    def ehlo_or_helo_if_needed(self) -> None:
+        return None
+
+    def putcmd(self, cmd, args="") -> None:
+        self.commands.append(f"{cmd} {args}".strip())
+        self._last_command = cmd
+
+    def send(self, _data) -> None:
+        self._last_command = ""
+
+    def getreply(self) -> tuple[int, bytes]:
+        return (354, b"go on") if self._last_command == "data" else (250, b"ok")
+
+    def quit(self) -> tuple[int, bytes]:
+        return 221, b"bye"
+
+
 # ---------------------------------------------------------------- harness
 
 
@@ -358,6 +392,8 @@ class Harness:
         }
         self.dns_error: Exception | None = None
         self.dns_queries: list[str] = []
+        self.before_dns: Callable[[], None] | None = None
+        self.monkeypatch = monkeypatch
 
         self.box_class = box_class = type("BoundMailBox", (FakeMailBox,), {"server": self.imap})
         smtp_class = type(
@@ -377,12 +413,21 @@ class Harness:
         self.mcp = FastMCP("test")
         tools.register(self.mcp, self.settings, dnsfunc=self.dns_lookup, clock=lambda: self.now)
 
+    def capture_envelope(self) -> list[str]:
+        """Send through real smtplib from here on, and return the commands it produces."""
+        commands: list[str] = []
+        smtp_class = type("BoundEnvelopeSmtp", (EnvelopeSmtp,), {"commands": commands})
+        self.monkeypatch.setattr("mail_mcp.smtp.smtplib.SMTP", smtp_class)
+        return commands
+
     def imap_box(self) -> FakeMailBox:
         return self.box_class()
 
     def dns_lookup(self, name, timeout: int = 5):
         name = name.decode() if isinstance(name, bytes) else name
         self.dns_queries.append(name)
+        if self.before_dns is not None:
+            self.before_dns()
         if self.dns_error is not None:
             raise self.dns_error
         return self.dns.get(name)

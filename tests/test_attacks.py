@@ -13,6 +13,8 @@ import anyio
 import pytest
 from fastmcp.exceptions import ToolError
 
+from mail_mcp.approval import ApprovalStore
+
 from .support import (
     APPROVER,
     BODY,
@@ -372,6 +374,93 @@ async def test_expired_approval_by_server_time(harness):
     harness.approve(pending)
     harness.now += 72 * 3600 + 1
     await assert_refused(harness, pending)
+
+
+async def assert_refused_as_expired(harness, pending) -> None:
+    result = await assert_refused(harness, pending)
+    assert "expired" in result["detail"], result
+    assert "approved" not in harness.log_kinds()
+
+
+async def test_approval_that_expires_during_the_imap_search(harness, monkeypatch):
+    """Valid when the send starts, past the deadline when verification ends."""
+    pending = await harness.request()
+    harness.approve(pending)
+    deadline = harness.now + 72 * 3600
+    harness.now = deadline - 1
+    real_uids = harness.box_class.uids
+
+    def late_uids(box, *args, **kwargs):
+        harness.now = deadline + 9
+        return real_uids(box, *args, **kwargs)
+
+    monkeypatch.setattr(harness.box_class, "uids", late_uids)
+    await assert_refused_as_expired(harness, pending)
+
+
+async def test_approval_that_expires_during_the_dns_lookup(harness):
+    pending = await harness.request()
+    harness.approve(pending)
+    deadline = harness.now + 72 * 3600
+    harness.now = deadline - 1
+
+    def late_dns():
+        harness.now = deadline + 9
+
+    harness.before_dns = late_dns
+    await assert_refused_as_expired(harness, pending)
+
+
+async def test_approval_that_expires_right_before_it_is_spent(harness, monkeypatch):
+    pending = await harness.request()
+    harness.approve(pending)
+    deadline = harness.now + 72 * 3600
+    harness.now = deadline - 1
+    real_consume = ApprovalStore.consume
+
+    def late_consume(store, *args, **kwargs):
+        harness.now = deadline + 1
+        return real_consume(store, *args, **kwargs)
+
+    monkeypatch.setattr(ApprovalStore, "consume", late_consume)
+    await assert_refused_as_expired(harness, pending)
+
+
+async def test_expired_approval_is_refused_again_and_not_called_used(harness, monkeypatch):
+    """An approval that lost the race to the deadline is expired, not spent by someone."""
+    pending = await harness.request()
+    harness.approve(pending)
+    deadline = harness.now + 72 * 3600
+    real_consume = ApprovalStore.consume
+
+    def late_consume(store, *args, **kwargs):
+        harness.now = deadline + 1
+        return real_consume(store, *args, **kwargs)
+
+    monkeypatch.setattr(ApprovalStore, "consume", late_consume)
+    await assert_refused_as_expired(harness, pending)
+    await assert_refused_as_expired(harness, pending)
+
+
+async def test_signature_that_expires_during_the_dns_lookup(harness, keys):
+    pending = await harness.request()
+    harness.deliver(
+        dkim_sign(iphone_reply(f"souhlasím {pending.code}"), keys["approver"], expires=int(harness.now) + 5)
+    )
+
+    def late_dns():
+        harness.now += 10
+
+    harness.before_dns = late_dns
+    result = await assert_refused(harness, pending)
+    assert "expired" in result["detail"], result
+
+
+async def test_an_approval_just_inside_the_deadline_still_sends(harness):
+    pending = await harness.request()
+    harness.approve(pending)
+    harness.now += 72 * 3600 - 1
+    assert (await harness.send(pending))["status"] == "sent"
 
 
 async def test_expiry_uses_internaldate_not_the_date_header(harness, keys):
