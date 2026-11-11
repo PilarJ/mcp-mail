@@ -21,7 +21,36 @@ logger = logging.getLogger(__name__)
 
 
 class SendError(RuntimeError):
-    pass
+    """A failed delivery, safe to show and to log: its text is ours, never the server's.
+
+    smtplib puts the server's wording, and for refused recipients their addresses, into its
+    exception text. `smtp_failure` keeps only a stable `code` and the name of the original class.
+    """
+
+    def __init__(self, message: str, *, code: str = "smtp_error", source: str | None = None) -> None:
+        super().__init__(message)
+        self.code = code
+        self.source = source
+
+
+def smtp_failure(exc: BaseException) -> SendError:
+    """The public form of an SMTP failure: a stable code and generic text, never the raw text."""
+    if isinstance(exc, smtplib.SMTPRecipientsRefused):
+        code, text = "smtp_recipients_refused", "The mail server refused one or more recipients."
+    elif isinstance(exc, smtplib.SMTPAuthenticationError):
+        code, text = "smtp_login_failed", "The mail server refused the login."
+    elif isinstance(exc, smtplib.SMTPSenderRefused):
+        code, text = "smtp_sender_refused", "The mail server refused the sender address."
+    elif isinstance(exc, (smtplib.SMTPServerDisconnected, smtplib.SMTPConnectError)):
+        code, text = "smtp_unreachable", "Could not reach the mail server, or the connection was lost."
+    elif isinstance(exc, smtplib.SMTPException):
+        # Before OSError: SMTPException subclasses it, so a server's answer is a rejection.
+        code, text = "smtp_rejected", "The mail server rejected the message."
+    elif isinstance(exc, OSError):
+        code, text = "smtp_unreachable", "Could not reach the mail server, or the connection was lost."
+    else:
+        code, text = "smtp_error", "Sending the mail failed."
+    return SendError(f"{text} ({code})", code=code, source=type(exc).__name__)
 
 
 def build_message(
@@ -75,7 +104,13 @@ def _send_sync(settings: Settings, msg: EmailMessage, recipients: list[str]) -> 
 
 
 async def send(settings: Settings, msg: EmailMessage, recipients: list[str]) -> None:
+    failure: SendError | None = None
     try:
         await anyio.to_thread.run_sync(lambda: _send_sync(settings, msg, recipients))
     except Exception as exc:
-        raise SendError(f"SMTP error: {exc}") from exc
+        failure = smtp_failure(exc)
+        logger.warning("SMTP delivery failed (%s)", failure.source)
+    if failure is not None:
+        # Raised outside the except block on purpose: the raw exception is neither the cause nor
+        # the context, so no traceback printer further up can show what the server said.
+        raise failure
