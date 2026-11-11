@@ -62,9 +62,10 @@ Listing never marks anything read; `mail_get` only does so if asked.
 `mail_save_draft`, `mail_delete` (only with `ALLOW_DELETE=true`, needs `confirm`)
 
 **Sending** — `mail_send`, `mail_reply`. Both need `confirm=true` **and**
-recipients on the allowlist. After a send, a copy (marked read, dated now) is filed in the
-sent folder (`SENT_FOLDER`, else the folder the server marks `\Sent`, else `Sent Messages`);
-the result reports it as `sent_copy`. A copy that cannot be filed does not make the send fail:
+recipients on the allowlist. With `SENT_FOLDER` set, a copy (marked read, dated now) is filed in
+that folder after the send and the result reports it as `sent_copy`; without it no copy is kept.
+The folder must already exist (it is never created; `mail_status` shows whether it does).
+A copy that cannot be filed does not make the send fail:
 the result stays `status: sent` with `sent_copy: {saved: false, error: "sent_copy_not_saved"}`, and
 neither it nor the log carries recipients or the server's own wording, only the error class is logged.
 
@@ -124,7 +125,7 @@ Note the `/mcp` suffix; the bare domain is not the endpoint.
 | `FROM_NAME` | Display name on outgoing mail |
 | `ALLOWED_RECIPIENTS` | Addresses or `@domain` entries mail may be sent to; `*` permits anyone (no boundary left); empty disables sending |
 | `ALLOW_DELETE` | `true` registers `mail_delete`, which expunges permanently; default off |
-| `SENT_FOLDER` | Folder that receives a copy of sent mail; empty uses the `\Sent` folder of the server, else `Sent Messages` |
+| `SENT_FOLDER` | Existing folder that receives a copy of sent mail, its IMAP name as `mail_list_folders` shows it; empty keeps no copy |
 | `DEDUP_MINUTES` | Refuse a second mail to the same recipient within this window; 0 disables |
 | `MAX_BODY_CHARS` / `MAX_ATTACHMENT_BYTES` | Size caps on what is returned |
 | `DATA_DIR` | Where the sent-mail audit log lives |

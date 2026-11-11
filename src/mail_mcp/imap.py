@@ -25,8 +25,6 @@ from .settings import Settings
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_SENT_FOLDER = "Sent Messages"
-
 
 def _charset(criteria: Any) -> str:
     """IMAP search strings are 8-bit text: anything beyond ASCII needs CHARSET UTF-8,
@@ -271,18 +269,20 @@ class ImapClient:
         return await self.run(op, folder)
 
     async def save_sent_copy(self, raw: bytes) -> str:
-        """File a copy of a mail that was just sent. Returns the folder it went to.
+        """File a copy of a mail that was just sent into SENT_FOLDER. Returns that folder.
 
-        Order of choice: SENT_FOLDER, the folder the server marks \\Sent, "Sent Messages".
-        The copy is marked read and dated now, as a mail client would.
+        Callers only call this when SENT_FOLDER is set. The folder is never created: a typo,
+        or the name a webmail shows instead of the real one ("Odeslané" for "Sent"), would
+        otherwise quietly start a second folder. The copy is marked read and dated now.
         """
+        folder = self._s.sent_folder
 
         def op(mb: MailBox) -> str:
-            folder = self._s.sent_folder or next(
-                (i.name for i in mb.folder.list() if "\\Sent" in i.flags), DEFAULT_SENT_FOLDER
-            )
             if not mb.folder.exists(folder):
-                mb.folder.create(folder)
+                raise MailError(
+                    f"SENT_FOLDER {folder!r} does not exist on the server",
+                    code="sent_folder_missing",
+                )
             mb.append(raw, folder, flag_set=["\\Seen"])
             return folder
 

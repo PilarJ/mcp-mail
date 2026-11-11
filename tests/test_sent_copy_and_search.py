@@ -188,53 +188,68 @@ async def test_an_ascii_search_is_unchanged(world):
 # ---------- copy of sent mail ----------
 
 
-async def test_mail_send_saves_a_copy_in_sent_messages(tmp_path, world, smtp_sent):
+async def test_without_sent_folder_no_copy_is_filed(tmp_path, world, smtp_sent):
+    # Opt-in: even with a folder the server marks \Sent, nothing is filed unless asked for.
+    world.folders.append('(\\HasNoChildren \\Sent) "." Gesendet')
     result = await call(tmp_path, "mail_send", SEND)
+    assert result["status"] == "sent"
+    assert len(smtp_sent) == 1
+    assert world.appended == []
+    assert "sent_copy" not in result
+
+
+async def test_mail_send_saves_a_copy_in_sent_folder(tmp_path, world, smtp_sent):
+    result = await call(tmp_path, "mail_send", SEND, SENT_FOLDER="Odeslane")
     assert result["status"] == "sent"
     assert len(smtp_sent) == 1
     assert len(world.appended) == 1
     copy = world.appended[0]
-    assert copy["folder"] == "Sent Messages"
+    assert copy["folder"] == "Odeslane"
     assert "\\Seen" in copy["flags"]
     assert abs(copy["date"] - datetime.now(timezone.utc)) < timedelta(minutes=1)
     assert f"Message-ID: {smtp_sent[0]['Message-ID']}".encode() in copy["message"]
     assert b"Subject: Test subject" in copy["message"]
     assert re.search(rb"(?m)^Date: .+", copy["message"])
-    assert result["sent_copy"] == {"saved": True, "folder": "Sent Messages"}
+    assert result["sent_copy"] == {"saved": True, "folder": "Odeslane"}
 
 
-async def test_the_folder_the_server_marks_sent_wins_over_the_default(tmp_path, world, smtp_sent):
-    world.folders.append('(\\HasNoChildren \\Sent) "." Gesendet')
-    result = await call(tmp_path, "mail_send", SEND)
-    assert world.appended[0]["folder"] == "Gesendet"
-    assert result["sent_copy"]["folder"] == "Gesendet"
-
-
-async def test_sent_folder_setting_wins_over_everything(tmp_path, world, smtp_sent):
-    world.folders.append('(\\HasNoChildren \\Sent) "." Gesendet')
-    result = await call(tmp_path, "mail_send", SEND, SENT_FOLDER="Odeslane")
-    assert world.appended[0]["folder"] == "Odeslane"
-    assert result["sent_copy"]["folder"] == "Odeslane"
+async def test_a_missing_sent_folder_is_not_created(tmp_path, world, smtp_sent, caplog):
+    # A typo, or the webmail's translated name of "Sent", must not quietly create a new folder.
+    result = await call(tmp_path, "mail_send", SEND, SENT_FOLDER="Neexistuje")
+    assert "sent_folder_missing" in caplog.text
+    assert result["status"] == "sent"
+    assert world.appended == []
+    assert not [name for name, _ in world.commands if name == "CREATE"]
+    assert result["sent_copy"]["saved"] is False
 
 
 async def test_a_failed_copy_does_not_turn_a_sent_mail_into_a_failure(tmp_path, world, smtp_sent):
     world.append_status = "NO"
-    result = await call(tmp_path, "mail_send", SEND)
+    result = await call(tmp_path, "mail_send", SEND, SENT_FOLDER="Odeslane")
     assert result["status"] == "sent"
     assert len(smtp_sent) == 1
     assert result["sent_copy"]["saved"] is False
 
 
 async def test_a_refused_send_saves_no_copy(tmp_path, world, smtp_sent):
-    result = await call(tmp_path, "mail_send", {**SEND, "confirm": False})
+    result = await call(tmp_path, "mail_send", {**SEND, "confirm": False}, SENT_FOLDER="Odeslane")
     assert result["status"] == "refused"
     assert smtp_sent == [] and world.appended == []
+
+
+async def test_mail_status_reports_the_sent_folder(tmp_path, world):
+    on = await call(tmp_path, "mail_status", {}, SENT_FOLDER="Odeslane")
+    assert on["sent_copy"] == {"folder": "Odeslane", "exists": True}
+    missing = await call(tmp_path, "mail_status", {}, SENT_FOLDER="Neexistuje")
+    assert missing["sent_copy"] == {"folder": "Neexistuje", "exists": False}
+    off = await call(tmp_path, "mail_status", {})
+    assert off["sent_copy"] is None
 
 
 async def test_mail_reply_saves_a_copy_too(tmp_path, world, smtp_sent):
     world.search_result = ["7"]
     world.messages["7"] = raw_message("Question", with_date=True)
-    result = await call(tmp_path, "mail_reply", {"uid": "7", "body": "Answer", "confirm": True})
+    result = await call(tmp_path, "mail_reply", {"uid": "7", "body": "Answer", "confirm": True}, SENT_FOLDER="Odeslane")
     assert result["status"] == "sent"
     assert len(world.appended) == 1
     assert b"Subject: Re: Question" in world.appended[0]["message"]

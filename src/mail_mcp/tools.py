@@ -84,6 +84,12 @@ def register(mcp: FastMCP, settings: Settings) -> None:
             "folder_count": len(folders),
             "inbox_unread": inbox and inbox.get("unread"),
             "sending": guard.describe(),
+            # Where sent mail is filed; None means no copy is kept. "exists" catches a
+            # SENT_FOLDER that names a folder the server does not have.
+            "sent_copy": {
+                "folder": settings.sent_folder,
+                "exists": any(f["name"] == settings.sent_folder for f in folders),
+            } if settings.sent_folder else None,
         }
 
     @mcp.tool(description=f"List the addresses {box} is permitted to send to.")
@@ -276,6 +282,8 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         await smtp.send(settings, msg, to + cc)
         sent_log.record(to, subject, kind)
         result = {"status": "sent", "mailbox": box, "to": to, "cc": cc, "subject": subject}
+        if not settings.sent_folder:  # filing a copy is opt-in
+            return result
         # The mail is out. A copy that cannot be filed must not make the send look failed
         # (the caller would send it again); it is reported next to the result instead.
         try:

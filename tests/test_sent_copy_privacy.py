@@ -57,7 +57,7 @@ async def send(tmp_path) -> dict:
         GITHUB_CLIENT_ID="x", GITHUB_CLIENT_SECRET="x",
         IMAP_HOST="imap.example.test", IMAP_USER="box@example.test", IMAP_PASS="x",
         SMTP_HOST="smtp.example.test", SMTP_USER="box@example.test", SMTP_PASS="x",
-        ALLOWED_RECIPIENTS="@example.test", DATA_DIR=str(tmp_path),
+        ALLOWED_RECIPIENTS="@example.test", DATA_DIR=str(tmp_path), SENT_FOLDER="Sent Messages",
     )
     mcp = FastMCP("test")
     tools.register(mcp, settings)
