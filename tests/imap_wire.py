@@ -47,10 +47,12 @@ class WireServer:
         *,
         login_reply: str = "OK LOGIN completed",
         append_reply: str = "OK APPEND completed",
+        select_reply: str = "OK [READ-WRITE] SELECT completed",
         folders: tuple[str, ...] = ("INBOX", "Sent Messages"),
     ) -> None:
         self.login_reply = login_reply
         self.append_reply = append_reply
+        self.select_reply = select_reply
         self.folders = folders
         self.connections = 0
         self.raw = bytearray()
@@ -127,7 +129,7 @@ class WireServer:
         tag, name = command.tag, command.name
         if name == "CAPABILITY":
             self._out += b"* CAPABILITY IMAP4rev1\r\n"
-        elif name in {"SELECT", "EXAMINE"}:
+        elif name in {"SELECT", "EXAMINE"} and self.select_reply.startswith("OK"):
             self._out += b"* 0 EXISTS\r\n"
         elif name == "LIST":
             for folder in self.folders:
@@ -136,7 +138,11 @@ class WireServer:
             self._out += b"* SEARCH\r\n"
         elif name == "LOGOUT":
             self._out += b"* BYE logging out\r\n"
-        reply = {"LOGIN": self.login_reply, "APPEND": self.append_reply}.get(name, "OK done")
+        replies = {
+            "LOGIN": self.login_reply, "APPEND": self.append_reply,
+            "SELECT": self.select_reply, "EXAMINE": self.select_reply,
+        }
+        reply = replies.get(name, "OK done")
         self._out += f"{tag} {reply}\r\n".encode()
 
     # ----- assertions -----
