@@ -10,12 +10,14 @@ from __future__ import annotations
 
 import logging
 import re
+import unicodedata
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 from typing import Any, Callable
 
 import anyio
 from imap_tools import AND, MailBox, MailMessageFlags
+from imap_tools.utils import quote
 
 from .settings import Settings
 
@@ -32,6 +34,28 @@ def _charset(criteria: Any) -> str:
 
 class MailError(RuntimeError):
     pass
+
+
+class UnsafeInput(MailError):
+    """A caller-supplied string that must never reach the IMAP connection."""
+
+
+def reject_control_chars(**values: str | None) -> None:
+    """Refuse any string that holds a control character (CR, LF, NUL, ESC, DEL, C1 ...).
+
+    imaplib joins command arguments with spaces and writes `tag NAME args CRLF` without looking
+    inside them, so a CR or LF in a search string is a command boundary: the rest of the string
+    runs as another IMAP command with the mailbox's credentials, past the delete switch and the
+    confirm gate. The input is refused as it is, never stripped or normalised into something
+    valid, and this runs before a connection is opened. Ordinary text, diacritics included,
+    passes.
+    """
+    for name, value in values.items():
+        if value is not None and any(unicodedata.category(ch) == "Cc" for ch in value):
+            raise UnsafeInput(
+                f"Refused: {name} contains a control character (CR, LF, NUL or similar). "
+                "Nothing was sent to the mailbox."
+            )
 
 
 class ImapClient:
@@ -97,6 +121,7 @@ class ImapClient:
         since: str | None,
         subject: str | None,
     ) -> list:
+        reject_control_chars(sender=sender, subject=subject)
         criteria = self._criteria(unread_only, sender, since, subject)
 
         def op(mb: MailBox) -> list:
@@ -126,6 +151,8 @@ class ImapClient:
         return await self.run(op, folder)
 
     async def search_raw(self, folder: str, criteria: str, limit: int) -> list:
+        reject_control_chars(criteria=criteria)
+
         def op(mb: MailBox) -> list:
             return list(
                 mb.fetch(
@@ -159,17 +186,18 @@ class ImapClient:
 
     async def thread_of(self, folder: str, message_id: str, limit: int) -> list:
         """Best-effort conversation: anything referencing this Message-ID."""
+        reject_control_chars(message_id=message_id)
+        quoted = quote(message_id)  # one IMAP string, whatever quotes or backslashes it holds
 
         def op(mb: MailBox) -> list:
             found = list(
                 mb.fetch(
-                    f'(OR HEADER "In-Reply-To" "{message_id}" '
-                    f'HEADER "References" "{message_id}")',
+                    f'(OR HEADER "In-Reply-To" {quoted} HEADER "References" {quoted})',
                     limit=limit, mark_seen=False, headers_only=True, bulk=True,
                 )
             )
             origin = list(
-                mb.fetch(f'HEADER "Message-ID" "{message_id}"',
+                mb.fetch(f'HEADER "Message-ID" {quoted}',
                          limit=1, mark_seen=False, headers_only=True)
             )
             return origin + found

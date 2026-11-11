@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import functools
 import logging
 from typing import Annotated, Any
 
@@ -12,7 +13,7 @@ from pydantic import Field
 
 from . import render, smtp
 from .guard import RecipientGuard, SentLog
-from .imap import ImapClient, MailError
+from .imap import ImapClient, MailError, UnsafeInput
 from .settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,18 @@ def register(mcp: FastMCP, settings: Settings) -> None:
 
     def refused(detail: str) -> dict:
         return {"status": "refused", "mailbox": box, "detail": detail}
+
+    def refuse_unsafe(tool):
+        """Turn a refused input into a refused result instead of an error."""
+
+        @functools.wraps(tool)
+        async def wrapper(*args, **kwargs):
+            try:
+                return await tool(*args, **kwargs)
+            except UnsafeInput as exc:
+                return refused(str(exc))
+
+        return wrapper
 
     async def delivery_dates(msgs: list, folder: str) -> dict:
         """Delivery dates for the messages that carry no Date header (usually none)."""
@@ -85,6 +98,7 @@ def register(mcp: FastMCP, settings: Settings) -> None:
     # ---------------- reading ----------------
 
     @mcp.tool(description=f"List messages in {box}, newest first. Headers only — use mail_get for a body.")
+    @refuse_unsafe
     async def mail_list(
         folder: Folder = "INBOX",
         limit: Limit = 20,
@@ -103,6 +117,7 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         }
 
     @mcp.tool(description=f"Search {box} with a raw IMAP query, for cases mail_list cannot express.")
+    @refuse_unsafe
     async def mail_search(
         criteria: Annotated[str, Field(description='Raw IMAP search, e.g. \'TEXT "invoice"\'.')],
         folder: Folder = "INBOX",
@@ -127,6 +142,7 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         return {"mailbox": box, "folder": folder, **render.full(msg, settings.max_body_chars, delivered)}
 
     @mcp.tool(description=f"Fetch the conversation around one message in {box}.")
+    @refuse_unsafe
     async def mail_get_thread(
         message_id: Annotated[str, Field(description="Message-ID from mail_get.")],
         folder: Folder = "INBOX",

@@ -14,8 +14,8 @@ import re
 import pytest
 from fastmcp import Client, FastMCP
 from fastmcp.exceptions import ToolError
-
 from imap_wire import WireServer
+
 from mail_mcp import imap as imap_module
 from mail_mcp import tools
 from mail_mcp.settings import Settings
@@ -166,7 +166,7 @@ async def test_a_diacritic_search_still_goes_out_as_utf8(tmp_path, wire):
     assert result["count"] == 0
     (search,) = wire.named("UID SEARCH")
     assert b"SEARCH CHARSET UTF-8 " in search.line
-    assert 'TEXT "účet"'.encode("utf-8") in search.line
+    assert 'TEXT "účet"'.encode() in search.line
     assert search_commands(wire) == ["UID SEARCH"]
     assert wire.mutations() == []
 
@@ -175,7 +175,7 @@ async def test_a_diacritic_subject_and_sender_still_go_out_as_utf8(tmp_path, wir
     await call(tmp_path, "mail_list", {"subject": "Nabídka", "sender": "jiří@example.test"})
     (search,) = wire.named("UID SEARCH")
     assert b"SEARCH CHARSET UTF-8 " in search.line
-    assert "Nabídka".encode("utf-8") in search.line and "jiří@example.test".encode("utf-8") in search.line
+    assert "Nabídka".encode() in search.line and "jiří@example.test".encode() in search.line
     assert wire.mutations() == []
 
 

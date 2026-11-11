@@ -168,7 +168,7 @@ class _WireSocket:
     def sendall(self, data: bytes) -> None:
         self._server.feed(data)
 
-    def makefile(self, *args, **kwargs) -> "_WireFile":
+    def makefile(self, *args, **kwargs) -> _WireFile:
         return _WireFile(self._server)
 
     def settimeout(self, *args) -> None:
