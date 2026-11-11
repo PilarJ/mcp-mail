@@ -64,7 +64,13 @@ Listing never marks anything read; `mail_get` only does so if asked.
 **Sending** — `mail_send`, `mail_reply`. Both need `confirm=true` **and**
 recipients on the allowlist. After a send, a copy (marked read, dated now) is filed in the
 sent folder (`SENT_FOLDER`, else the folder the server marks `\Sent`, else `Sent Messages`);
-the result reports it as `sent_copy`. A copy that cannot be filed does not make the send fail.
+the result reports it as `sent_copy`. A copy that cannot be filed does not make the send fail:
+the result stays `status: sent` with `sent_copy: {saved: false, error: "sent_copy_not_saved"}`, and
+neither it nor the log carries recipients or the server's own wording, only the error class is logged.
+
+Search text (`mail_search` criteria, `mail_list` sender and subject, `mail_get_thread` message id) is
+refused with a `refused` result if it holds a control character such as CR, LF or NUL, because those
+would start another IMAP command; diacritics are fine.
 
 ## Setup
 

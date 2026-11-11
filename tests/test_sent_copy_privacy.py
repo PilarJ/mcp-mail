@@ -14,8 +14,8 @@ import logging
 
 import pytest
 from fastmcp import Client, FastMCP
-
 from imap_wire import WireServer
+
 from mail_mcp import imap as imap_module
 from mail_mcp import tools
 from mail_mcp.settings import Settings

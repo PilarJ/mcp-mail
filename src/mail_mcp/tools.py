@@ -18,6 +18,9 @@ from .settings import Settings
 
 logger = logging.getLogger(__name__)
 
+# Stable code in the result when the mail went out but its copy could not be filed.
+SENT_COPY_FAILED = "sent_copy_not_saved"
+
 Folder = Annotated[str, Field(description="IMAP folder name. Default INBOX.")]
 Uid = Annotated[str, Field(description="Message uid, as returned by mail_list.")]
 Limit = Annotated[int, Field(ge=1, le=100)]
@@ -277,8 +280,14 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         try:
             result["sent_copy"] = {"saved": True, "folder": await imap.save_sent_copy(raw)}
         except MailError as exc:
-            logger.warning("Sent mail to %s, but could not file a copy: %s", ", ".join(to), exc)
-            result["sent_copy"] = {"saved": False, "detail": str(exc)}
+            # imap-tools puts the server's raw answer into its exception text, so neither the log
+            # nor the result gets the text: only the class of the failure, and no recipients.
+            logger.warning("Sent mail, but could not file a copy (%s)", type(exc.__cause__ or exc).__name__)
+            result["sent_copy"] = {
+                "saved": False,
+                "error": SENT_COPY_FAILED,
+                "detail": "The mail was sent, but a copy could not be filed in the sent folder.",
+            }
         return result
 
     @mcp.tool(description=f"Send a new email from {box}. Only to allowlisted recipients, and only with confirm=true.")
