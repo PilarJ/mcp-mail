@@ -73,12 +73,13 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         try:
             folders = await imap.folders()
             inbox = next((f for f in folders if f["name"].upper() == "INBOX"), None)
-            connected, detail = True, None
+            connected, detail, error = True, None, None
         except MailError as exc:
-            folders, inbox, connected, detail = [], None, False, str(exc)
+            folders, inbox, connected, detail, error = [], None, False, str(exc), exc.code
         return {
             "mailbox": box,
             "connected": connected,
+            "error": error,
             "detail": detail,
             "folder_count": len(folders),
             "inbox_unread": inbox and inbox.get("unread"),
@@ -282,7 +283,7 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         except MailError as exc:
             # imap-tools puts the server's raw answer into its exception text, so neither the log
             # nor the result gets the text: only the class of the failure, and no recipients.
-            logger.warning("Sent mail, but could not file a copy (%s)", type(exc.__cause__ or exc).__name__)
+            logger.warning("Sent mail, but could not file a copy (%s)", exc.source or exc.code)
             result["sent_copy"] = {
                 "saved": False,
                 "error": SENT_COPY_FAILED,

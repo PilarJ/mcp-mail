@@ -72,6 +72,11 @@ Search text (`mail_search` criteria, `mail_list` sender and subject, `mail_get_t
 refused with a `refused` result if it holds a control character such as CR, LF or NUL, because those
 would start another IMAP command; diacritics are fine.
 
+When the IMAP or SMTP server fails (login refused, unreachable, recipients refused ...), tool errors and
+`mail_status` report a stable code (for example `imap_login_failed`, `imap_unreachable`,
+`smtp_recipients_refused`) with a generic sentence. What the server wrote, and any address in it, is
+never passed on or logged; the log records only the error class.
+
 ## Setup
 
 ### 1. GitHub OAuth app

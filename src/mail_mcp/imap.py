@@ -8,6 +8,7 @@ to life mid-request.
 
 from __future__ import annotations
 
+import imaplib
 import logging
 import re
 import unicodedata
@@ -17,6 +18,7 @@ from typing import Any, Callable
 
 import anyio
 from imap_tools import AND, MailBox, MailMessageFlags
+from imap_tools.errors import MailboxLoginError, UnexpectedCommandStatusError
 from imap_tools.utils import quote
 
 from .settings import Settings
@@ -33,7 +35,36 @@ def _charset(criteria: Any) -> str:
 
 
 class MailError(RuntimeError):
-    pass
+    """A failure that is safe to show to a caller and to write to a log.
+
+    The text is always ours. imap-tools and imaplib put the server's raw answer into their
+    exception text, which can carry personal data, so `imap_failure` turns them into a stable
+    `code` and a generic sentence, and `source` keeps only the name of the original class.
+    """
+
+    def __init__(self, message: str, *, code: str = "mail_error", source: str | None = None) -> None:
+        super().__init__(message)
+        self.code = code
+        self.source = source
+
+
+def imap_failure(exc: BaseException) -> MailError:
+    """The public form of an IMAP failure: a stable code and generic text, never the raw text."""
+    if isinstance(exc, MailboxLoginError):
+        code, text = "imap_login_failed", "The mail server refused the login."
+    elif isinstance(exc, UnexpectedCommandStatusError):
+        code, text = "imap_command_failed", "The mail server refused the request."
+    elif isinstance(exc, imaplib.IMAP4.abort):
+        code, text = "imap_connection_lost", "The connection to the mail server was lost."
+    elif isinstance(exc, imaplib.IMAP4.error):
+        code, text = "imap_command_failed", "The mail server refused the request."
+    elif isinstance(exc, OSError):  # sockets, TLS, timeouts
+        code, text = "imap_unreachable", "Could not reach the mail server."
+    elif isinstance(exc, (TypeError, ValueError)):  # e.g. a uid the library refuses to use
+        code, text = "imap_invalid_request", "The mail library did not accept a value in the request."
+    else:
+        code, text = "imap_error", "The mail operation failed."
+    return MailError(f"{text} ({code})", code=code, source=type(exc).__name__)
 
 
 class UnsafeInput(MailError):
@@ -63,13 +94,20 @@ class ImapClient:
         self._s = settings
 
     def _run(self, fn: Callable[[MailBox], Any], folder: str = "INBOX") -> Any:
+        failure: MailError
         try:
             with MailBox(self._s.imap_host, port=self._s.imap_port).login(
                 self._s.imap_user, self._s.imap_pass, initial_folder=folder
             ) as mailbox:
                 return fn(mailbox)
+        except MailError:
+            raise  # ours already: its text was written here, not by a server
         except Exception as exc:
-            raise MailError(f"IMAP error: {exc}") from exc
+            failure = imap_failure(exc)
+            logger.warning("IMAP operation failed (%s)", failure.source)
+        # Raised here, outside the except block, on purpose: the raw exception is neither the
+        # cause nor the context, so no traceback printer further up can show what the server said.
+        raise failure
 
     async def run(self, fn: Callable[[MailBox], Any], folder: str = "INBOX") -> Any:
         return await anyio.to_thread.run_sync(lambda: self._run(fn, folder))
