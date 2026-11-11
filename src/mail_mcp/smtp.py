@@ -41,10 +41,13 @@ def smtp_failure(exc: BaseException) -> SendError:
         code, text = "smtp_login_failed", "The mail server refused the login."
     elif isinstance(exc, smtplib.SMTPSenderRefused):
         code, text = "smtp_sender_refused", "The mail server refused the sender address."
-    elif isinstance(exc, (smtplib.SMTPServerDisconnected, smtplib.SMTPConnectError, OSError)):
+    elif isinstance(exc, (smtplib.SMTPServerDisconnected, smtplib.SMTPConnectError)):
         code, text = "smtp_unreachable", "Could not reach the mail server, or the connection was lost."
     elif isinstance(exc, smtplib.SMTPException):
+        # Before OSError: SMTPException subclasses it, so a server's answer is a rejection.
         code, text = "smtp_rejected", "The mail server rejected the message."
+    elif isinstance(exc, OSError):
+        code, text = "smtp_unreachable", "Could not reach the mail server, or the connection was lost."
     else:
         code, text = "smtp_error", "Sending the mail failed."
     return SendError(f"{text} ({code})", code=code, source=type(exc).__name__)
