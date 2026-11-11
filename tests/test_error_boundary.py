@@ -239,6 +239,19 @@ SMTP_FAILURES = {
         ConnectionRefusedError(f"[Errno 61] {SERVER_TEXT}"),
         "login", "smtp_unreachable", "ConnectionRefusedError",
     ),
+    # smtplib.SMTPException subclasses OSError: a server's answer must not be filed as "unreachable".
+    "data-rejected": (
+        smtplib.SMTPDataError(550, f"5.7.1 {SERVER_TEXT}".encode()),
+        "send_message", "smtp_rejected", "SMTPDataError",
+    ),
+    "response-rejected": (
+        smtplib.SMTPResponseException(554, f"5.3.0 {SERVER_TEXT}".encode()),
+        "send_message", "smtp_rejected", "SMTPResponseException",
+    ),
+    "connect-refused-by-greeting": (
+        smtplib.SMTPConnectError(421, f"4.3.2 {SERVER_TEXT}".encode()),
+        "login", "smtp_unreachable", "SMTPConnectError",
+    ),
 }
 smtp_failure = pytest.mark.parametrize(
     "failure,at,code,error_class", SMTP_FAILURES.values(), ids=SMTP_FAILURES.keys()
