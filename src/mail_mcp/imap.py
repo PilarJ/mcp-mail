@@ -9,6 +9,9 @@ to life mid-request.
 from __future__ import annotations
 
 import logging
+import re
+from datetime import datetime
+from email.utils import parsedate_to_datetime
 from typing import Any, Callable
 
 import anyio
@@ -17,6 +20,14 @@ from imap_tools import AND, MailBox, MailMessageFlags
 from .settings import Settings
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_SENT_FOLDER = "Sent Messages"
+
+
+def _charset(criteria: Any) -> str:
+    """IMAP search strings are 8-bit text: anything beyond ASCII needs CHARSET UTF-8,
+    otherwise imap-tools fails with "'ascii' codec can't encode character"."""
+    return "US-ASCII" if str(criteria).isascii() else "UTF-8"
 
 
 class MailError(RuntimeError):
@@ -94,6 +105,7 @@ class ImapClient:
             return list(
                 mb.fetch(
                     criteria,
+                    _charset(criteria),
                     limit=limit,
                     reverse=True,
                     mark_seen=False,
@@ -117,10 +129,31 @@ class ImapClient:
         def op(mb: MailBox) -> list:
             return list(
                 mb.fetch(
-                    criteria, limit=limit, reverse=True, mark_seen=False,
-                    headers_only=True, bulk=True,
+                    criteria, _charset(criteria), limit=limit, reverse=True,
+                    mark_seen=False, headers_only=True, bulk=True,
                 )
             )
+
+        return await self.run(op, folder)
+
+    async def delivery_dates(self, folder: str, uids: list[str]) -> dict[str, datetime]:
+        """When the server received each message: the fallback date for mail whose own
+        Date header is missing. Best effort, an empty answer is fine."""
+        if not uids:
+            return {}
+
+        def op(mb: MailBox) -> dict[str, datetime]:
+            typ, data = mb.client.uid("FETCH", ",".join(uids), "(INTERNALDATE)")
+            found: dict[str, datetime] = {}
+            for item in data if typ == "OK" else []:
+                line = item[0] if isinstance(item, tuple) else item
+                if not isinstance(line, bytes):
+                    continue
+                uid = re.search(rb"UID (\d+)", line)
+                stamp = re.search(rb'INTERNALDATE "([^"]+)"', line)
+                if uid and stamp:
+                    found[uid.group(1).decode()] = parsedate_to_datetime(stamp.group(1).decode())
+            return found
 
         return await self.run(op, folder)
 
@@ -170,6 +203,24 @@ class ImapClient:
             return {"status": "ok", "uids": uids, "deleted_from": folder}
 
         return await self.run(op, folder)
+
+    async def save_sent_copy(self, raw: bytes) -> str:
+        """File a copy of a mail that was just sent. Returns the folder it went to.
+
+        Order of choice: SENT_FOLDER, the folder the server marks \\Sent, "Sent Messages".
+        The copy is marked read and dated now, as a mail client would.
+        """
+
+        def op(mb: MailBox) -> str:
+            folder = self._s.sent_folder or next(
+                (i.name for i in mb.folder.list() if "\\Sent" in i.flags), DEFAULT_SENT_FOLDER
+            )
+            if not mb.folder.exists(folder):
+                mb.folder.create(folder)
+            mb.append(raw, folder, flag_set=["\\Seen"])
+            return folder
+
+        return await self.run(op)
 
     async def append_raw(self, folder: str, raw: bytes, flags: list[str]) -> dict:
         def op(mb: MailBox) -> dict:

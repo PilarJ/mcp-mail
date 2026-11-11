@@ -52,6 +52,10 @@ class Settings(BaseSettings):
     # 0 disables it.
     dedup_minutes: int = Field(default=0, alias="DEDUP_MINUTES")
 
+    # Folder that receives a copy of every mail sent through this server. Empty:
+    # the folder the server marks \\Sent, else "Sent Messages".
+    sent_folder: str = Field(default="", alias="SENT_FOLDER")
+
     # Registers mail_delete, which expunges for good. Off unless asked for.
     allow_delete: bool = Field(default=False, alias="ALLOW_DELETE")
 

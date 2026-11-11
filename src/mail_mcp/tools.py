@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import logging
 from typing import Annotated, Any
 
 from fastmcp import FastMCP
@@ -13,6 +14,8 @@ from . import render, smtp
 from .guard import RecipientGuard, SentLog
 from .imap import ImapClient, MailError
 from .settings import Settings
+
+logger = logging.getLogger(__name__)
 
 Folder = Annotated[str, Field(description="IMAP folder name. Default INBOX.")]
 Uid = Annotated[str, Field(description="Message uid, as returned by mail_list.")]
@@ -34,6 +37,18 @@ def register(mcp: FastMCP, settings: Settings) -> None:
 
     def refused(detail: str) -> dict:
         return {"status": "refused", "mailbox": box, "detail": detail}
+
+    async def delivery_dates(msgs: list, folder: str) -> dict:
+        """Delivery dates for the messages that carry no Date header (usually none)."""
+        undated = [m.uid for m in msgs if not render.has_date(m)]
+        try:
+            return await imap.delivery_dates(folder, undated)
+        except MailError:
+            return {}
+
+    async def summaries(msgs: list, folder: str) -> list[dict]:
+        dates = await delivery_dates(msgs, folder)
+        return [render.summarise(m, dates.get(m.uid)) for m in msgs]
 
     # ---------------- diagnostics ----------------
 
@@ -84,7 +99,7 @@ def register(mcp: FastMCP, settings: Settings) -> None:
             "mailbox": box,
             "folder": folder,
             "count": len(msgs),
-            "messages": [render.summarise(m) for m in msgs],
+            "messages": await summaries(msgs, folder),
         }
 
     @mcp.tool(description=f"Search {box} with a raw IMAP query, for cases mail_list cannot express.")
@@ -98,7 +113,7 @@ def register(mcp: FastMCP, settings: Settings) -> None:
             "mailbox": box,
             "folder": folder,
             "count": len(msgs),
-            "messages": [render.summarise(m) for m in msgs],
+            "messages": await summaries(msgs, folder),
         }
 
     @mcp.tool(description=f"Read one message from {box} in full, including its body and attachment list.")
@@ -108,7 +123,8 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         mark_seen: Annotated[bool, Field(description="Mark the message read as a side effect.")] = False,
     ) -> dict:
         msg = await imap.get_message(folder, uid, mark_seen)
-        return {"mailbox": box, "folder": folder, **render.full(msg, settings.max_body_chars)}
+        delivered = (await delivery_dates([msg], folder)).get(msg.uid)
+        return {"mailbox": box, "folder": folder, **render.full(msg, settings.max_body_chars, delivered)}
 
     @mcp.tool(description=f"Fetch the conversation around one message in {box}.")
     async def mail_get_thread(
@@ -125,7 +141,7 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         return {
             "mailbox": box,
             "count": len(msgs),
-            "messages": [render.summarise(m) for m in msgs],
+            "messages": await summaries(msgs, folder),
         }
 
     @mcp.tool(description=f"Download one attachment from a message in {box}, base64-encoded.")
@@ -236,9 +252,18 @@ def register(mcp: FastMCP, settings: Settings) -> None:
             )
 
         msg = smtp.build_message(settings, to, subject, body, cc, in_reply_to, references)
+        raw = msg.as_bytes()  # exactly what goes out, kept for the copy in the sent folder
         await smtp.send(settings, msg, to + cc)
         sent_log.record(to, subject, kind)
-        return {"status": "sent", "mailbox": box, "to": to, "cc": cc, "subject": subject}
+        result = {"status": "sent", "mailbox": box, "to": to, "cc": cc, "subject": subject}
+        # The mail is out. A copy that cannot be filed must not make the send look failed
+        # (the caller would send it again); it is reported next to the result instead.
+        try:
+            result["sent_copy"] = {"saved": True, "folder": await imap.save_sent_copy(raw)}
+        except MailError as exc:
+            logger.warning("Sent mail to %s, but could not file a copy: %s", ", ".join(to), exc)
+            result["sent_copy"] = {"saved": False, "detail": str(exc)}
+        return result
 
     @mcp.tool(description=f"Send a new email from {box}. Only to allowlisted recipients, and only with confirm=true.")
     async def mail_send(

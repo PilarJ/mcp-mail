@@ -62,7 +62,9 @@ Listing never marks anything read; `mail_get` only does so if asked.
 `mail_save_draft`, `mail_delete` (only with `ALLOW_DELETE=true`, needs `confirm`)
 
 **Sending** — `mail_send`, `mail_reply`. Both need `confirm=true` **and**
-recipients on the allowlist.
+recipients on the allowlist. After a send, a copy (marked read, dated now) is filed in the
+sent folder (`SENT_FOLDER`, else the folder the server marks `\Sent`, else `Sent Messages`);
+the result reports it as `sent_copy`. A copy that cannot be filed does not make the send fail.
 
 ## Setup
 
@@ -111,6 +113,7 @@ Note the `/mcp` suffix; the bare domain is not the endpoint.
 | `FROM_NAME` | Display name on outgoing mail |
 | `ALLOWED_RECIPIENTS` | Addresses or `@domain` entries mail may be sent to; `*` permits anyone (no boundary left); empty disables sending |
 | `ALLOW_DELETE` | `true` registers `mail_delete`, which expunges permanently; default off |
+| `SENT_FOLDER` | Folder that receives a copy of sent mail; empty uses the `\Sent` folder of the server, else `Sent Messages` |
 | `DEDUP_MINUTES` | Refuse a second mail to the same recipient within this window; 0 disables |
 | `MAX_BODY_CHARS` / `MAX_ATTACHMENT_BYTES` | Size caps on what is returned |
 | `DATA_DIR` | Where the sent-mail audit log lives |
