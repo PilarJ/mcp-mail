@@ -12,7 +12,7 @@ from imap_tools import AND
 from pydantic import Field
 
 from . import render, smtp
-from .guard import RecipientGuard, SentLog
+from .guard import InvalidAddress, RecipientGuard, SentLog, canonical_addresses
 from .imap import ImapClient, MailError, UnsafeInput
 from .settings import Settings
 
@@ -254,8 +254,16 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         confirm: bool, kind: str, in_reply_to: str | None = None,
         references: str | None = None,
     ) -> dict:
+        # Once, before anything else: from here on every step (allowlist, repeat guard,
+        # headers, RCPT, sent log, result) uses these same bare addresses. A display name is
+        # dropped; an entry that is not one plain address refuses the whole send.
+        try:
+            to = canonical_addresses(to, "To")
+            cc = canonical_addresses(cc or [], "Cc")
+        except InvalidAddress as exc:
+            return refused(str(exc))
         to = smtp.strip_self(settings, to)
-        cc = smtp.strip_self(settings, cc or [])
+        cc = smtp.strip_self(settings, cc)
         if not to:
             return refused("No recipients left after removing this mailbox's own address.")
 
