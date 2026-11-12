@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import base64
+import functools
+import logging
 import time
 from typing import Annotated, Any, Callable
 
@@ -12,8 +14,13 @@ from pydantic import Field
 
 from . import approval, render, smtp
 from .guard import RECIPIENT_FORM, RecipientGuard, SentLog, parse_recipients
-from .imap import ImapClient, MailError
+from .imap import ImapClient, MailError, UnsafeInput
 from .settings import Settings
+
+logger = logging.getLogger(__name__)
+
+# Stable code in the result when the mail went out but its copy could not be filed.
+SENT_COPY_FAILED = "sent_copy_not_saved"
 
 Folder = Annotated[str, Field(description="IMAP folder name. Default INBOX.")]
 Uid = Annotated[str, Field(description="Message uid, as returned by mail_list.")]
@@ -50,6 +57,30 @@ def register(
     def refused(detail: str) -> dict:
         return {"status": "refused", "mailbox": box, "detail": detail}
 
+    def refuse_unsafe(tool):
+        """Turn a refused input into a refused result instead of an error."""
+
+        @functools.wraps(tool)
+        async def wrapper(*args, **kwargs):
+            try:
+                return await tool(*args, **kwargs)
+            except UnsafeInput as exc:
+                return refused(str(exc))
+
+        return wrapper
+
+    async def delivery_dates(msgs: list, folder: str) -> dict:
+        """Delivery dates for the messages that carry no Date header (usually none)."""
+        undated = [m.uid for m in msgs if not render.has_date(m)]
+        try:
+            return await imap.delivery_dates(folder, undated)
+        except MailError:
+            return {}
+
+    async def summaries(msgs: list, folder: str) -> list[dict]:
+        dates = await delivery_dates(msgs, folder)
+        return [render.summarise(m, dates.get(m.uid)) for m in msgs]
+
     # ---------------- diagnostics ----------------
 
     @mcp.tool(description=f"Check that the {box} mailbox is reachable and report how it is configured.")
@@ -57,17 +88,24 @@ def register(
         try:
             folders = await imap.folders()
             inbox = next((f for f in folders if f["name"].upper() == "INBOX"), None)
-            connected, detail = True, None
+            connected, detail, error = True, None, None
         except MailError as exc:
-            folders, inbox, connected, detail = [], None, False, str(exc)
+            folders, inbox, connected, detail, error = [], None, False, str(exc), exc.code
         return {
             "mailbox": box,
             "connected": connected,
+            "error": error,
             "detail": detail,
             "folder_count": len(folders),
             "inbox_unread": inbox and inbox.get("unread"),
             "sending": guard.describe(),
             **approval_report,
+            # Where sent mail is filed; None means no copy is kept. "exists" catches a
+            # SENT_FOLDER that names a folder the server does not have.
+            "sent_copy": {
+                "folder": settings.sent_folder,
+                "exists": any(f["name"] == settings.sent_folder for f in folders),
+            } if settings.sent_folder else None,
         }
 
     @mcp.tool(description=f"List the addresses {box} is permitted to send to.")
@@ -86,6 +124,7 @@ def register(
     # ---------------- reading ----------------
 
     @mcp.tool(description=f"List messages in {box}, newest first. Headers only — use mail_get for a body.")
+    @refuse_unsafe
     async def mail_list(
         folder: Folder = "INBOX",
         limit: Limit = 20,
@@ -100,10 +139,11 @@ def register(
             "mailbox": box,
             "folder": folder,
             "count": len(msgs),
-            "messages": [render.summarise(m) for m in msgs],
+            "messages": await summaries(msgs, folder),
         }
 
     @mcp.tool(description=f"Search {box} with a raw IMAP query, for cases mail_list cannot express.")
+    @refuse_unsafe
     async def mail_search(
         criteria: Annotated[str, Field(description='Raw IMAP search, e.g. \'TEXT "invoice"\'.')],
         folder: Folder = "INBOX",
@@ -114,7 +154,7 @@ def register(
             "mailbox": box,
             "folder": folder,
             "count": len(msgs),
-            "messages": [render.summarise(m) for m in msgs],
+            "messages": await summaries(msgs, folder),
         }
 
     @mcp.tool(description=f"Read one message from {box} in full, including its body and attachment list.")
@@ -124,9 +164,11 @@ def register(
         mark_seen: Annotated[bool, Field(description="Mark the message read as a side effect.")] = False,
     ) -> dict:
         msg = await imap.get_message(folder, uid, mark_seen)
-        return {"mailbox": box, "folder": folder, **render.full(msg, settings.max_body_chars)}
+        delivered = (await delivery_dates([msg], folder)).get(msg.uid)
+        return {"mailbox": box, "folder": folder, **render.full(msg, settings.max_body_chars, delivered)}
 
     @mcp.tool(description=f"Fetch the conversation around one message in {box}.")
+    @refuse_unsafe
     async def mail_get_thread(
         message_id: Annotated[str, Field(description="Message-ID from mail_get.")],
         folder: Folder = "INBOX",
@@ -141,7 +183,7 @@ def register(
         return {
             "mailbox": box,
             "count": len(msgs),
-            "messages": [render.summarise(m) for m in msgs],
+            "messages": await summaries(msgs, folder),
         }
 
     @mcp.tool(description=f"Download one attachment from a message in {box}, base64-encoded.")
@@ -258,9 +300,26 @@ def register(
             )
 
         msg = smtp.build_message(settings, to, subject, body, cc, in_reply_to, references)
+        raw = msg.as_bytes()  # exactly what goes out, kept for the copy in the sent folder
         await smtp.send(settings, msg, to + cc)
         sent_log.record(to, subject, kind)
-        return {"status": "sent", "mailbox": box, "to": to, "cc": cc, "subject": subject}
+        result = {"status": "sent", "mailbox": box, "to": to, "cc": cc, "subject": subject}
+        if not settings.sent_folder:  # filing a copy is opt-in
+            return result
+        # The mail is out. A copy that cannot be filed must not make the send look failed
+        # (the caller would send it again); it is reported next to the result instead.
+        try:
+            result["sent_copy"] = {"saved": True, "folder": await imap.save_sent_copy(raw)}
+        except MailError as exc:
+            # imap-tools puts the server's raw answer into its exception text, so neither the log
+            # nor the result gets the text: only the class of the failure, and no recipients.
+            logger.warning("Sent mail, but could not file a copy (%s)", exc.source or exc.code)
+            result["sent_copy"] = {
+                "saved": False,
+                "error": SENT_COPY_FAILED,
+                "detail": "The mail was sent, but a copy could not be filed in the sent folder.",
+            }
+        return result
 
     @mcp.tool(description=f"Send a new email from {box}. Only to allowlisted recipients, and only with confirm=true.")
     async def mail_send(

@@ -60,7 +60,10 @@ async def test_set_approver_adds_exactly_the_two_tools(harness):
 async def test_unset_approver_status_and_allowlist_are_unchanged(make_harness):
     harness = make_harness()
     status = await harness.call("mail_status")
-    assert set(status) == {"mailbox", "connected", "detail", "folder_count", "inbox_unread", "sending"}
+    # The status keys main has, and no approval keys when no approver is set.
+    assert set(status) == {
+        "mailbox", "connected", "error", "detail", "folder_count", "inbox_unread", "sending", "sent_copy",
+    }
     allowed = await harness.call("mail_list_allowed_recipients")
     assert set(allowed) == {"mailbox", "addresses", "domains", "any_recipient", "sending_enabled"}
 

@@ -8,15 +8,19 @@ to life mid-request.
 
 from __future__ import annotations
 
-import datetime
+import imaplib
 import logging
 import re
+import unicodedata
 from dataclasses import dataclass
+from datetime import date, datetime
 from email.utils import parsedate_to_datetime
 from typing import Any, Callable
 
 import anyio
 from imap_tools import AND, MailBox, MailMessageFlags
+from imap_tools.errors import MailboxLoginError, UnexpectedCommandStatusError
+from imap_tools.utils import quote
 
 from .settings import Settings
 from .tls import client_context
@@ -24,8 +28,65 @@ from .tls import client_context
 logger = logging.getLogger(__name__)
 
 
+def _charset(criteria: Any) -> str:
+    """IMAP search strings are 8-bit text: anything beyond ASCII needs CHARSET UTF-8,
+    otherwise imap-tools fails with "'ascii' codec can't encode character"."""
+    return "US-ASCII" if str(criteria).isascii() else "UTF-8"
+
+
 class MailError(RuntimeError):
-    pass
+    """A failure that is safe to show to a caller and to write to a log.
+
+    The text is always ours. imap-tools and imaplib put the server's raw answer into their
+    exception text, which can carry personal data, so `imap_failure` turns them into a stable
+    `code` and a generic sentence, and `source` keeps only the name of the original class.
+    """
+
+    def __init__(self, message: str, *, code: str = "mail_error", source: str | None = None) -> None:
+        super().__init__(message)
+        self.code = code
+        self.source = source
+
+
+def imap_failure(exc: BaseException) -> MailError:
+    """The public form of an IMAP failure: a stable code and generic text, never the raw text."""
+    if isinstance(exc, MailboxLoginError):
+        code, text = "imap_login_failed", "The mail server refused the login."
+    elif isinstance(exc, UnexpectedCommandStatusError):
+        code, text = "imap_command_failed", "The mail server refused the request."
+    elif isinstance(exc, imaplib.IMAP4.abort):
+        code, text = "imap_connection_lost", "The connection to the mail server was lost."
+    elif isinstance(exc, imaplib.IMAP4.error):
+        code, text = "imap_command_failed", "The mail server refused the request."
+    elif isinstance(exc, OSError):  # sockets, TLS, timeouts
+        code, text = "imap_unreachable", "Could not reach the mail server."
+    elif isinstance(exc, (TypeError, ValueError)):  # e.g. a uid the library refuses to use
+        code, text = "imap_invalid_request", "The mail library did not accept a value in the request."
+    else:
+        code, text = "imap_error", "The mail operation failed."
+    return MailError(f"{text} ({code})", code=code, source=type(exc).__name__)
+
+
+class UnsafeInput(MailError):
+    """A caller-supplied string that must never reach the IMAP connection."""
+
+
+def reject_control_chars(**values: str | None) -> None:
+    """Refuse any string that holds a control character (CR, LF, NUL, ESC, DEL, C1 ...).
+
+    imaplib joins command arguments with spaces and writes `tag NAME args CRLF` without looking
+    inside them, so a CR or LF in a search string is a command boundary: the rest of the string
+    runs as another IMAP command with the mailbox's credentials, past the delete switch and the
+    confirm gate. The input is refused as it is, never stripped or normalised into something
+    valid, and this runs before a connection is opened. Ordinary text, diacritics included,
+    passes.
+    """
+    for name, value in values.items():
+        if value is not None and any(unicodedata.category(ch) == "Cc" for ch in value):
+            raise UnsafeInput(
+                f"Refused: {name} contains a control character (CR, LF, NUL or similar). "
+                "Nothing was sent to the mailbox."
+            )
 
 
 @dataclass(frozen=True)
@@ -81,13 +142,20 @@ class ImapClient:
         self._s = settings
 
     def _run(self, fn: Callable[[MailBox], Any], folder: str = "INBOX") -> Any:
+        failure: MailError
         try:
             with MailBox(
                 self._s.imap_host, port=self._s.imap_port, ssl_context=client_context()
             ).login(self._s.imap_user, self._s.imap_pass, initial_folder=folder) as mailbox:
                 return fn(mailbox)
+        except MailError:
+            raise  # ours already: its text was written here, not by a server
         except Exception as exc:
-            raise MailError(f"IMAP error: {exc}") from exc
+            failure = imap_failure(exc)
+            logger.warning("IMAP operation failed (%s)", failure.source)
+        # Raised here, outside the except block, on purpose: the raw exception is neither the
+        # cause nor the context, so no traceback printer further up can show what the server said.
+        raise failure
 
     async def run(self, fn: Callable[[MailBox], Any], folder: str = "INBOX") -> Any:
         return await anyio.to_thread.run_sync(lambda: self._run(fn, folder))
@@ -139,6 +207,7 @@ class ImapClient:
         since: str | None,
         subject: str | None,
     ) -> list:
+        reject_control_chars(sender=sender, subject=subject)
         criteria = self._criteria(unread_only, sender, since, subject)
 
         def op(mb: MailBox) -> list:
@@ -147,6 +216,7 @@ class ImapClient:
             return list(
                 mb.fetch(
                     criteria,
+                    _charset(criteria),
                     limit=limit,
                     reverse=True,
                     mark_seen=False,
@@ -167,29 +237,53 @@ class ImapClient:
         return await self.run(op, folder)
 
     async def search_raw(self, folder: str, criteria: str, limit: int) -> list:
+        reject_control_chars(criteria=criteria)
+
         def op(mb: MailBox) -> list:
             return list(
                 mb.fetch(
-                    criteria, limit=limit, reverse=True, mark_seen=False,
-                    headers_only=True, bulk=True,
+                    criteria, _charset(criteria), limit=limit, reverse=True,
+                    mark_seen=False, headers_only=True, bulk=True,
                 )
             )
 
         return await self.run(op, folder)
 
+    async def delivery_dates(self, folder: str, uids: list[str]) -> dict[str, datetime]:
+        """When the server received each message: the fallback date for mail whose own
+        Date header is missing. Best effort, an empty answer is fine."""
+        if not uids:
+            return {}
+
+        def op(mb: MailBox) -> dict[str, datetime]:
+            typ, data = mb.client.uid("FETCH", ",".join(uids), "(INTERNALDATE)")
+            found: dict[str, datetime] = {}
+            for item in data if typ == "OK" else []:
+                line = item[0] if isinstance(item, tuple) else item
+                if not isinstance(line, bytes):
+                    continue
+                uid = re.search(rb"UID (\d+)", line)
+                stamp = re.search(rb'INTERNALDATE "([^"]+)"', line)
+                if uid and stamp:
+                    found[uid.group(1).decode()] = parsedate_to_datetime(stamp.group(1).decode())
+            return found
+
+        return await self.run(op, folder)
+
     async def thread_of(self, folder: str, message_id: str, limit: int) -> list:
         """Best-effort conversation: anything referencing this Message-ID."""
+        reject_control_chars(message_id=message_id)
+        quoted = quote(message_id)  # one IMAP string, whatever quotes or backslashes it holds
 
         def op(mb: MailBox) -> list:
             found = list(
                 mb.fetch(
-                    f'(OR HEADER "In-Reply-To" "{message_id}" '
-                    f'HEADER "References" "{message_id}")',
+                    f'(OR HEADER "In-Reply-To" {quoted} HEADER "References" {quoted})',
                     limit=limit, mark_seen=False, headers_only=True, bulk=True,
                 )
             )
             origin = list(
-                mb.fetch(f'HEADER "Message-ID" "{message_id}"',
+                mb.fetch(f'HEADER "Message-ID" {quoted}',
                          limit=1, mark_seen=False, headers_only=True)
             )
             return origin + found
@@ -197,7 +291,7 @@ class ImapClient:
         return await self.run(op, folder)
 
     async def approval_candidates(
-        self, sender: str, since: datetime.date, limit: int, max_bytes: int
+        self, sender: str, since: date, limit: int, max_bytes: int
     ) -> list[RawMessage]:
         """Newest INBOX messages that may be approvals, as the exact bytes on the server.
 
@@ -259,6 +353,26 @@ class ImapClient:
             return {"status": "ok", "uids": uids, "deleted_from": folder}
 
         return await self.run(op, folder)
+
+    async def save_sent_copy(self, raw: bytes) -> str:
+        """File a copy of a mail that was just sent into SENT_FOLDER. Returns that folder.
+
+        Callers only call this when SENT_FOLDER is set. The folder is never created: a typo,
+        or the name a webmail shows instead of the real one ("Odeslané" for "Sent"), would
+        otherwise quietly start a second folder. The copy is marked read and dated now.
+        """
+        folder = self._s.sent_folder
+
+        def op(mb: MailBox) -> str:
+            if not mb.folder.exists(folder):
+                raise MailError(
+                    f"SENT_FOLDER {folder!r} does not exist on the server",
+                    code="sent_folder_missing",
+                )
+            mb.append(raw, folder, flag_set=["\\Seen"])
+            return folder
+
+        return await self.run(op)
 
     async def append_raw(self, folder: str, raw: bytes, flags: list[str]) -> dict:
         def op(mb: MailBox) -> dict:
