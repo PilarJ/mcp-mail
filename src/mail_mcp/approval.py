@@ -35,7 +35,7 @@ from dkim.dnsplug import get_txt
 from dkim.util import parse_tag_value
 
 from . import smtp
-from .guard import ADDRESS_RE, SentLog
+from .guard import ADDRESS_RE, InvalidAddress, SentLog, canonical_address
 from .imap import ImapClient, MailError, RawMessage
 from .settings import Settings
 
@@ -144,9 +144,24 @@ def _has_unsafe_character(text: str, allowed: str) -> bool:
     return False
 
 
+def bare_recipient(to: str) -> str | None:
+    """`to` if it is already exactly what canonical_address makes of it, otherwise None.
+
+    The approval path takes no display name and does no rewriting at all: the string the
+    approver is shown is the one fingerprinted, sent RCPT TO, put in To and logged.
+    """
+    try:
+        return to if canonical_address(to) == to else None
+    except InvalidAddress:
+        return None
+
+
 def concept_problem(settings: Settings, to: str, subject: str, body: str) -> str | None:
-    if not ADDRESS_RE.fullmatch(to):
-        return "The recipient must be exactly one bare ASCII address, with no display name."
+    if bare_recipient(to) is None:
+        return (
+            "The recipient must be exactly one bare ASCII address in lower case, with no "
+            "display name."
+        )
     if to.lower() in _own_addresses(settings):
         return "The recipient must not be this mailbox's own address."
     if len(subject) > MAX_SUBJECT_CHARS:
@@ -667,7 +682,9 @@ class ApprovalService:
 
         if not hmac.compare_digest(approval.fingerprint, fingerprint(to, subject, body)):
             if await anyio.to_thread.run_sync(self._store.void, approval_id):
-                self._log.record([to], subject[:MAX_SUBJECT_CHARS], "approval_voided")
+                # Not the raw `to`: the log reads addresses leniently and would credit a
+                # crafted entry to whichever address it merely contains.
+                self._log.record([bare_recipient(to) or ""], subject[:MAX_SUBJECT_CHARS], "approval_voided")
             return self._refused(
                 "This differs from what was submitted for approval, so the approval is now void "
                 "for good. Sending the original will not work either. Request a new one."
@@ -676,6 +693,13 @@ class ApprovalService:
         problems = await self._approval_problems(approval)
         if problems:
             return self._refused(problems)
+
+        # Approvals made before recipients were canonical may hold a form this server no
+        # longer sends to. Refused, and the approval is left as it is.
+        if bare_recipient(to) is None:
+            return self._refused(
+                "This approval's recipient is not one bare lower-case address. Request a new one."
+            )
 
         when = self._log.recently_sent_to([to])
         if when:

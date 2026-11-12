@@ -24,18 +24,14 @@ that not work:
   configuration and cannot be changed from a conversation. `confirm=true` is
   decided by the model — which is reading the attacker's text — so it is a
   guard against mistakes, not against attacks. The allowlist is the boundary.
-  Each recipient entry must be exactly one plain address (`name@example.com` or
-  `Name <name@example.com>`); the display name is dropped, and the bare address
-  the allowlist checked is the one used in the headers, for delivery and in the
-  sent log. Anything else (two addresses, CR/LF, an address in the display name,
-  a quoted local part) refuses the whole send.
 - **Replies are not exempt.** Someone does not earn the right to receive mail
   by sending you some first.
 - **One address means one address.** A recipient is `addr@example.com` or
   `Name <addr@example.com>` in plain ASCII. The server parses it once and uses
   that one address for the allowlist, the SMTP envelope, the headers and the
   log, lower-cased and without the name. An address in a display name, a list in
-  one value, comments, groups and `%` routing are refused.
+  one value, comments, groups, a quoted local part, CR/LF and `%` routing are
+  refused, and refuse the whole send.
 - **Bodies are labelled as untrusted** where they are returned, and the server
   instructions tell the model that email content is data, never instructions.
   This lowers the odds of the model being fooled; it is not what stops mail
@@ -55,7 +51,9 @@ to one recipient, after one named human has approved exactly that message by ema
 
 1. `mail_request_approval(to, subject, body)` stores a fingerprint of the concept
    and emails the approver the full text with a one-time code. The model gets an
-   `approval_id`, never the code.
+   `approval_id`, never the code. `to` must be one bare address in lower case, no
+   display name: the server rewrites nothing on this path, so the address the
+   approver sees is the one that is fingerprinted, sent to and logged.
 2. The approver replies, or forwards the message back, with a first line of
    `souhlasím <CODE>`.
 3. `mail_send_approved(approval_id, to, subject, body)` sends if the server can

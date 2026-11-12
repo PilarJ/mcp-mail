@@ -384,7 +384,7 @@ def register(
             "approve it yourself and you never see the code."
         )
         async def mail_request_approval(
-            to: Annotated[str, Field(description="Exactly one bare address, no display name.")],
+            to: Annotated[str, Field(description="Exactly one bare address in lower case, no display name.")],
             subject: str,
             body: Annotated[str, Field(description='Plain text. Line breaks are "\\n".')],
         ) -> dict:
