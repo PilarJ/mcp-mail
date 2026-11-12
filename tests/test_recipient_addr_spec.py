@@ -17,7 +17,9 @@ import smtplib
 import pytest
 from fastmcp import Client, FastMCP
 from imap_tools import MailMessage
+from imap_wire import WireServer
 
+from mail_mcp import imap as imap_module
 from mail_mcp import tools
 from mail_mcp.guard import RecipientGuard
 from mail_mcp.imap import ImapClient
@@ -168,19 +170,21 @@ def smtp_recorder(monkeypatch) -> SmtpRecorder:
     return recorder
 
 
-def make_settings(tmp_path) -> Settings:
-    return Settings(
+def make_settings(tmp_path, **extra) -> Settings:
+    values = dict(
         MAILBOX_LABEL="box@example.test", BASE_URL="https://mcp.example.test",
         GITHUB_CLIENT_ID="x", GITHUB_CLIENT_SECRET="x",
         IMAP_HOST="imap.example.test", IMAP_USER="box@example.test", IMAP_PASS="x",
         SMTP_HOST="smtp.example.test", SMTP_USER="box@example.test", SMTP_PASS="x",
         ALLOWED_RECIPIENTS=ALLOWLIST, DATA_DIR=str(tmp_path),
     )
+    values.update(extra)
+    return Settings(**values)
 
 
-async def call(tmp_path, tool: str, arguments: dict) -> dict:
+async def call(tmp_path, tool: str, arguments: dict, **settings_extra) -> dict:
     mcp = FastMCP("test")
-    tools.register(mcp, make_settings(tmp_path))
+    tools.register(mcp, make_settings(tmp_path, **settings_extra))
     async with Client(mcp) as client:
         result = await client.call_tool(tool, arguments)
     return result.structured_content or result.data
@@ -237,16 +241,16 @@ async def test_a_named_allowed_address_is_sent_to_the_bare_address_only(tmp_path
 # ---------- mail_reply: the recipient comes from the message being answered ----------
 
 
+def incoming_message(*headers: str) -> MailMessage:
+    """A received message with these extra header lines, parsed by imap-tools."""
+    lines = ["To: box@example.test", "Subject: Question", "Message-ID: <m1@sender.example>", *headers]
+    if not any(h.lower().startswith("from:") for h in headers):
+        lines.insert(0, "From: Someone <someone@sender.example>")
+    return MailMessage.from_bytes(("\r\n".join(lines) + "\r\n\r\nbody\r\n").encode())
+
+
 def message_with_reply_to(reply_to: str) -> MailMessage:
-    raw = (
-        "From: Someone <someone@sender.example>\r\n"
-        f"Reply-To: {reply_to}\r\n"
-        "To: box@example.test\r\n"
-        "Subject: Question\r\n"
-        "Message-ID: <m1@sender.example>\r\n"
-        "\r\nbody\r\n"
-    ).encode()
-    return MailMessage.from_bytes(raw)
+    return incoming_message(f"Reply-To: {reply_to}")
 
 
 @pytest.fixture
@@ -285,3 +289,101 @@ async def test_mail_reply_to_a_named_allowed_reply_to_goes_to_the_bare_address(t
     assert rcpt == [TRUSTED]
     assert msg["To"] == TRUSTED
     assert [entry["to"] for entry in await sent_log(tmp_path)] == [TRUSTED]
+
+
+# ---------- surroundings: own address, repeat guard, wildcard, drafts ----------
+
+OWN_NAMED = "Box Owner <BOX@Example.Test>"  # this mailbox (SMTP_USER box@example.test), named and in mixed case
+
+
+def assert_own_address_absent(rcpt: list[str], msg) -> None:
+    for value in [*rcpt, msg["To"] or "", msg["Cc"] or ""]:
+        assert "box@example.test" not in value.lower()
+
+
+async def test_reply_all_leaves_this_mailbox_out_and_keeps_the_allowed_partner(tmp_path, smtp_recorder, incoming):
+    incoming["msg"] = incoming_message(
+        f"From: Trusted Person <{TRUSTED}>",
+        f"Cc: {OWN_NAMED}, Partner <p@partner.example>",
+    )
+
+    result = await call(tmp_path, "mail_reply", {**REPLY, "reply_all": True})
+
+    assert result["status"] == "sent"
+    assert result["to"] == [TRUSTED]
+    assert result["cc"] == ["p@partner.example"]
+    [(rcpt, msg)] = smtp_recorder.deliveries
+    assert rcpt == [TRUSTED, "p@partner.example"]
+    assert msg["To"] == TRUSTED
+    assert msg["Cc"] == "p@partner.example"
+    assert_own_address_absent(rcpt, msg)
+
+
+async def test_a_named_mixed_case_own_address_in_cc_is_left_out(tmp_path, smtp_recorder):
+    result = await call(tmp_path, "mail_send", send([TRUSTED], cc=[OWN_NAMED, "Partner <p@partner.example>"]))
+
+    assert result["status"] == "sent"
+    assert result["cc"] == ["p@partner.example"]
+    [(rcpt, msg)] = smtp_recorder.deliveries
+    assert rcpt == [TRUSTED, "p@partner.example"]
+    assert_own_address_absent(rcpt, msg)
+
+
+async def test_only_this_mailbox_as_recipient_sends_nothing(tmp_path, smtp_recorder):
+    result = await call(tmp_path, "mail_send", send([OWN_NAMED]))
+
+    assert result["status"] == "refused"
+    assert smtp_recorder.connections == 0
+
+
+@pytest.mark.parametrize("variant", [TRUSTED, "Someone Else <trusted@allowed.example>", "TRUSTED@Allowed.EXAMPLE"])
+async def test_the_repeat_guard_sees_every_form_of_the_same_address(tmp_path, smtp_recorder, variant):
+    first = await call(tmp_path, "mail_send", send([f"Trusted Person <{TRUSTED}>"]), DEDUP_MINUTES=60)
+    assert first["status"] == "sent"
+
+    again = await call(tmp_path, "mail_send", send([variant]), DEDUP_MINUTES=60)
+
+    assert again["status"] == "refused"
+    assert "repeat guard" in again["detail"]
+    assert len(smtp_recorder.deliveries) == 1
+    log = await sent_log(tmp_path)
+    assert [entry["to"] for entry in log] == [TRUSTED]
+
+
+async def test_a_wildcard_allowlist_sends_to_the_same_bare_lowercase_address_everywhere(tmp_path, smtp_recorder):
+    result = await call(tmp_path, "mail_send", send(["Some One <Some.One@Elsewhere.Example>"]), ALLOWED_RECIPIENTS="*")
+
+    bare = "some.one@elsewhere.example"
+    assert result["status"] == "sent"
+    assert result["to"] == [bare]
+    [(rcpt, msg)] = smtp_recorder.deliveries
+    assert rcpt == [bare]
+    assert smtplib.quoteaddr(rcpt[0]) == f"<{bare}>"
+    assert msg["To"] == bare
+    assert [entry["to"] for entry in await sent_log(tmp_path)] == [bare]
+
+
+async def test_a_draft_is_saved_unchanged_with_an_empty_allowlist_and_nothing_is_sent(tmp_path, smtp_recorder, monkeypatch):
+    wire = WireServer(folders=("INBOX", "Drafts"))
+    monkeypatch.setattr(imap_module, "MailBox", wire.mailbox_class())
+
+    result = await call(
+        tmp_path, "mail_save_draft",
+        {"to": ["Draft Person <draft@elsewhere.example>"], "cc": ["cc@elsewhere.example"],
+         "subject": "Draft subject", "body": "Draft body"},
+        ALLOWED_RECIPIENTS="",
+    )
+
+    assert result["status"] == "ok"
+    assert result["folder"] == "Drafts"
+    assert result["to"] == ["Draft Person <draft@elsewhere.example>"]
+    [append] = wire.named("APPEND")
+    assert b"Drafts" in append.line and b"\\Draft" in append.line
+    raw = bytes(wire.raw)
+    assert b"To: Draft Person <draft@elsewhere.example>" in raw
+    assert b"Cc: cc@elsewhere.example" in raw
+    assert b"Subject: Draft subject" in raw
+    assert b"Draft body" in raw
+    assert smtp_recorder.connections == 0
+    assert smtp_recorder.deliveries == []
+    assert await sent_log(tmp_path) == []
