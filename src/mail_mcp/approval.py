@@ -27,7 +27,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from email import policy
 from pathlib import Path
-from typing import Callable, Iterator
+from typing import Awaitable, Callable, Iterator
 
 import anyio
 import dkim
@@ -571,10 +571,12 @@ class ApprovalService:
         *,
         dnsfunc: DnsFunc | None = None,
         clock: Callable[[], float] = time.time,
+        file_copy: Callable[[bytes], Awaitable[dict]] | None = None,
     ) -> None:
         self._s = settings
         self._imap = imap
         self._log = sent_log
+        self._file_copy = file_copy  # files a copy in SENT_FOLDER; None when that is unset
         self._dns = dnsfunc or get_txt
         self._clock = clock
         self._store = ApprovalStore(settings.approval_db_path)
@@ -692,14 +694,18 @@ class ApprovalService:
         self._log.record([to], subject, "approved")
 
         message = smtp.build_message(self._s, [to], subject, body)
+        raw = message.as_bytes()  # exactly what goes out, kept for the copy in the sent folder
         try:
             await smtp.send(self._s, message, [to])
         except smtp.SendError as exc:
-            logger.warning("Approved message not sent: %s", type(exc.__cause__).__name__)
+            logger.warning("Approved message not sent: %s", exc.source or exc.code)
             return self._refused("Sending failed. The approval stays spent, so request a new one.")
 
         self._log.record([to], subject, "sent_approved")
-        return {"status": "sent", "mailbox": self._s.mailbox_label, "to": to, "subject": subject}
+        result = {"status": "sent", "mailbox": self._s.mailbox_label, "to": to, "subject": subject}
+        if self._file_copy is not None:
+            result["sent_copy"] = await self._file_copy(raw)
+        return result
 
     async def _approval_problems(self, approval: Approval) -> str | None:
         """None once a message in INBOX proves the approval, otherwise why not."""
@@ -710,7 +716,7 @@ class ApprovalService:
             )
         except MailError as exc:
             # Not str(exc): the failed IMAP command contains the approver's address.
-            logger.warning("Approval search failed: %s", type(exc.__cause__).__name__)
+            logger.warning("Approval search failed: %s", exc.source or exc.code)
             return "The mailbox could not be searched for the approval, so nothing was sent."
 
         if not candidates:

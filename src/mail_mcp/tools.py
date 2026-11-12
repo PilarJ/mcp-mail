@@ -22,6 +22,25 @@ logger = logging.getLogger(__name__)
 # Stable code in the result when the mail went out but its copy could not be filed.
 SENT_COPY_FAILED = "sent_copy_not_saved"
 
+
+async def file_sent_copy(imap: ImapClient, raw: bytes) -> dict:
+    """The sent_copy part of a send result, for mail that has already gone out.
+
+    A copy that cannot be filed must not make the send look failed (the caller would send it
+    again); it is reported next to the result instead.
+    """
+    try:
+        return {"saved": True, "folder": await imap.save_sent_copy(raw)}
+    except MailError as exc:
+        # imap-tools puts the server's raw answer into its exception text, so neither the log
+        # nor the result gets the text: only the class of the failure, and no recipients.
+        logger.warning("Sent mail, but could not file a copy (%s)", exc.source or exc.code)
+        return {
+            "saved": False,
+            "error": SENT_COPY_FAILED,
+            "detail": "The mail was sent, but a copy could not be filed in the sent folder.",
+        }
+
 Folder = Annotated[str, Field(description="IMAP folder name. Default INBOX.")]
 Uid = Annotated[str, Field(description="Message uid, as returned by mail_list.")]
 Limit = Annotated[int, Field(ge=1, le=100)]
@@ -51,7 +70,10 @@ def register(
     approval_report: dict = {}
     if settings.approver_address:
         approval.check_config(settings)
-        approvals = approval.ApprovalService(settings, imap, sent_log, dnsfunc=dnsfunc, clock=clock)
+        approvals = approval.ApprovalService(
+            settings, imap, sent_log, dnsfunc=dnsfunc, clock=clock,
+            file_copy=functools.partial(file_sent_copy, imap) if settings.sent_folder else None,
+        )
         approval_report = {"approval_enabled": True}
 
     def refused(detail: str) -> dict:
@@ -306,19 +328,7 @@ def register(
         result = {"status": "sent", "mailbox": box, "to": to, "cc": cc, "subject": subject}
         if not settings.sent_folder:  # filing a copy is opt-in
             return result
-        # The mail is out. A copy that cannot be filed must not make the send look failed
-        # (the caller would send it again); it is reported next to the result instead.
-        try:
-            result["sent_copy"] = {"saved": True, "folder": await imap.save_sent_copy(raw)}
-        except MailError as exc:
-            # imap-tools puts the server's raw answer into its exception text, so neither the log
-            # nor the result gets the text: only the class of the failure, and no recipients.
-            logger.warning("Sent mail, but could not file a copy (%s)", exc.source or exc.code)
-            result["sent_copy"] = {
-                "saved": False,
-                "error": SENT_COPY_FAILED,
-                "detail": "The mail was sent, but a copy could not be filed in the sent folder.",
-            }
+        result["sent_copy"] = await file_sent_copy(imap, raw)
         return result
 
     @mcp.tool(description=f"Send a new email from {box}. Only to allowlisted recipients, and only with confirm=true.")
