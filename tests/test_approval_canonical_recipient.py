@@ -154,3 +154,14 @@ def stored_fingerprint(harness, approval_id: str) -> str:
     with sqlite3.connect(harness.settings.approval_db_path) as db:
         [(value,)] = db.execute("SELECT fingerprint FROM approvals WHERE id = ?", (approval_id,)).fetchall()
     return value
+
+
+async def test_an_approval_made_for_a_non_canonical_recipient_sends_nothing(harness, monkeypatch):
+    # As an approval stored before recipients had to be canonical would be.
+    monkeypatch.setattr("mail_mcp.approval.concept_problem", lambda *args: None)
+    pending = await harness.request(to="Client@Example.Net")
+    harness.approve(pending)
+    result = await harness.send(pending)
+    assert result["status"] == "refused", result
+    assert harness.delivered() == []
+    assert "approved" not in harness.log_kinds()
