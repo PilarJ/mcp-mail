@@ -24,6 +24,11 @@ that not work:
   configuration and cannot be changed from a conversation. `confirm=true` is
   decided by the model — which is reading the attacker's text — so it is a
   guard against mistakes, not against attacks. The allowlist is the boundary.
+  Each recipient entry must be exactly one plain address (`name@example.com` or
+  `Name <name@example.com>`); the display name is dropped, and the bare address
+  the allowlist checked is the one used in the headers, for delivery and in the
+  sent log. Anything else (two addresses, CR/LF, an address in the display name,
+  a quoted local part) refuses the whole send.
 - **Replies are not exempt.** Someone does not earn the right to receive mail
   by sending you some first.
 - **Bodies are labelled as untrusted** where they are returned, and the server

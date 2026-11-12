@@ -14,13 +14,74 @@ import os
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from email.utils import getaddresses
 from pathlib import Path
 
 _ADDR_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 
+# One plain addr-spec: dot-atom local part, a domain of at least two DNS labels. ASCII only,
+# no quotes, spaces, brackets, commas or semicolons: nothing smtplib could read differently.
+_LOCAL = r"[A-Za-z0-9_+-]+(?:\.[A-Za-z0-9_+-]+)*"
+_LABEL = r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?"
+_ADDR_SPEC_RE = re.compile(rf"{_LOCAL}@{_LABEL}(?:\.{_LABEL})+")
+_MAX_ADDRESS = 254  # RFC 5321 path limit
+
+_HOW = "Give one plain address per entry, such as name@example.com or Name <name@example.com>."
+
+
+def _invalid_reason(label: str, positions: list[int]) -> str:
+    where = ", ".join(str(p) for p in positions)
+    entries = f"{label} entry {where} is" if len(positions) == 1 else f"{label} entries {where} are"
+    return f"Sending was refused: {entries} not a single valid address. {_HOW}"
+
+
+class InvalidAddress(ValueError):
+    """A recipient entry that is not exactly one plain address. Its text never repeats the entry."""
+
+
+def canonical_address(value: str) -> str:
+    """The one bare, lowercase address in `value`, or InvalidAddress.
+
+    A display name (`Name <addr@example.com>`) is accepted and dropped. Refused: more than
+    one address (a list, a group, a second address in a comment or in the display name),
+    an empty value, CR/LF or any other control character, and anything that is not a
+    plain addr-spec. This is what mail is sent to, so it must be what smtplib would send
+    RCPT TO, with nothing left over for it to read another way.
+    """
+    if not isinstance(value, str) or any(ord(ch) < 32 or ord(ch) == 127 for ch in value):
+        raise InvalidAddress(_HOW)
+    # Exactly one "@" in the whole entry: a display name or comment that carries another
+    # address is refused rather than trusted to be dropped the same way by every parser.
+    if value.count("@") != 1:
+        raise InvalidAddress(_HOW)
+    pairs = getaddresses([value])
+    if len(pairs) != 1:
+        raise InvalidAddress(_HOW)
+    address = pairs[0][1]
+    if len(address) > _MAX_ADDRESS or not _ADDR_SPEC_RE.fullmatch(address):
+        raise InvalidAddress(_HOW)
+    return address.lower()
+
+
+def canonical_addresses(values: list[str], label: str) -> list[str]:
+    """`canonical_address` of every entry; InvalidAddress names the list and the positions only."""
+    result, invalid = [], []
+    for position, value in enumerate(values, 1):
+        try:
+            result.append(canonical_address(value))
+        except InvalidAddress:
+            invalid.append(position)
+    if invalid:
+        raise InvalidAddress(_invalid_reason(label, invalid))
+    return result
+
 
 def extract_address(value: str) -> str:
-    """Pull the bare address out of `Name <addr@example.com>`."""
+    """Pull the bare address out of `Name <addr@example.com>`.
+
+    Lenient: it takes the first address-like text. Never base a decision on where mail
+    goes on it; use `canonical_address`.
+    """
     match = _ADDR_RE.search(value or "")
     return match.group(0).lower() if match else (value or "").strip().lower()
 
@@ -77,10 +138,13 @@ class RecipientGuard:
                 "permitted addresses to the server configuration — this cannot "
                 "be overridden from a conversation.",
             )
-        rejected = [
-            addr for addr in (extract_address(r) for r in recipients)
-            if addr and not self._permits(addr)
-        ]
+        # Parsed strictly: the address checked here must be the one mail goes to. An entry
+        # that is not one plain address is refused and not repeated, it may be attacker text.
+        try:
+            addresses = canonical_addresses(recipients, "Recipient")
+        except InvalidAddress as exc:
+            return GuardResult(False, [], str(exc))
+        rejected = [addr for addr in addresses if not self._permits(addr)]
         if rejected:
             return GuardResult(
                 False,
