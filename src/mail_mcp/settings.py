@@ -59,6 +59,13 @@ class Settings(BaseSettings):
     # Registers mail_delete, which expunges for good. Off unless asked for.
     allow_delete: bool = Field(default=False, alias="ALLOW_DELETE")
 
+    # Sole approver for sending one specific message outside the allowlist.
+    # Unset: mail_request_approval and mail_send_approved are not registered at all.
+    approver_address: str = Field(default="", alias="APPROVER_ADDRESS")
+    approval_ttl_hours: int = Field(default=72, alias="APPROVAL_TTL_HOURS")
+    approval_max_per_hour: int = Field(default=5, alias="APPROVAL_MAX_PER_HOUR")
+    approval_max_pending: int = Field(default=10, alias="APPROVAL_MAX_PENDING")
+
     max_body_chars: int = Field(default=50_000, alias="MAX_BODY_CHARS")
     max_attachment_bytes: int = Field(default=5_000_000, alias="MAX_ATTACHMENT_BYTES")
 
@@ -86,6 +93,10 @@ class Settings(BaseSettings):
     @property
     def sent_log_path(self) -> Path:
         return self.data_dir / "sent_log.json"
+
+    @property
+    def approval_db_path(self) -> Path:
+        return self.data_dir / "approvals.sqlite3"
 
 
 def load_settings() -> Settings:

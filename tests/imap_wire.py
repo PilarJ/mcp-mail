@@ -157,7 +157,7 @@ class WireServer:
         server = self
 
         class WireMailBox(BaseMailBox):
-            def __init__(self, host, port=993):
+            def __init__(self, host, port=993, ssl_context=None):
                 super().__init__()
 
             def _get_mailbox_client(self):

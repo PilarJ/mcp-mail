@@ -19,6 +19,13 @@ from pathlib import Path
 
 _ADDR_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 
+# APPROVER_ADDRESS must be in this form: plain ASCII, one mailbox. No "%", which some
+# servers still treat as routing to another host.
+ADDRESS_RE = re.compile(r"[A-Za-z0-9._+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+")
+
+# sent_log entries that record no mail going to `to`, so the repeat guard ignores them.
+APPROVAL_EVENT_KINDS = frozenset({"approval_requested", "approved", "approval_voided"})
+
 # One plain addr-spec: dot-atom local part, a domain of at least two DNS labels. ASCII only,
 # no quotes, spaces, brackets, commas or semicolons: nothing smtplib could read differently.
 _LOCAL = r"[A-Za-z0-9_+-]+(?:\.[A-Za-z0-9_+-]+)*"
@@ -176,7 +183,7 @@ class SentLog:
         cutoff = (datetime.now() - timedelta(minutes=self._dedup_minutes)).isoformat()
         targets = {extract_address(r) for r in recipients}
         for entry in self._read():
-            if entry.get("sent_at", "") < cutoff:
+            if entry.get("sent_at", "") < cutoff or entry.get("kind") in APPROVAL_EVENT_KINDS:
                 continue
             if extract_address(entry.get("to", "")) in targets:
                 return entry.get("sent_at", "")

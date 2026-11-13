@@ -17,7 +17,7 @@ import smtplib
 import pytest
 from fastmcp import Client, FastMCP
 from fastmcp.exceptions import ToolError
-from imap_wire import WireServer
+from .imap_wire import WireServer
 
 from mail_mcp import imap as imap_module
 from mail_mcp import smtp, tools
@@ -149,7 +149,7 @@ async def test_an_imap_failure_is_logged_as_its_class_only(
 
 
 async def test_an_unreachable_server_is_reported_without_its_text(tmp_path, monkeypatch, logs):
-    def refuse(host, port=993):
+    def refuse(host, port=993, ssl_context=None):
         raise ConnectionRefusedError(f"[Errno 61] {SERVER_TEXT}")
 
     monkeypatch.setattr(imap_module, "MailBox", refuse)
@@ -197,10 +197,10 @@ async def test_our_own_not_found_message_is_kept(tmp_path, monkeypatch):
 
 def fake_smtp(monkeypatch, failure: Exception, *, at: str = "send_message") -> None:
     class FakeSMTP:
-        def __init__(self, host, port, timeout=None):
+        def __init__(self, host, port, timeout=None, context=None):
             pass
 
-        def starttls(self):
+        def starttls(self, context=None):
             pass
 
         def login(self, user, password):

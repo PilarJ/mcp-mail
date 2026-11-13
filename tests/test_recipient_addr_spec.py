@@ -17,7 +17,7 @@ import smtplib
 import pytest
 from fastmcp import Client, FastMCP
 from imap_tools import MailMessage
-from imap_wire import WireServer
+from .imap_wire import WireServer
 
 from mail_mcp import imap as imap_module
 from mail_mcp import tools
@@ -144,10 +144,10 @@ class SmtpRecorder:
         recorder = self
 
         class FakeSMTP:
-            def __init__(self, host, port, timeout=None):
+            def __init__(self, host, port, timeout=None, context=None):
                 recorder.connections += 1
 
-            def starttls(self):
+            def starttls(self, context=None):
                 pass
 
             def login(self, user, password):

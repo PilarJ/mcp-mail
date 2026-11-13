@@ -16,6 +16,7 @@ import anyio
 
 from .guard import extract_address
 from .settings import Settings
+from .tls import client_context
 
 logger = logging.getLogger(__name__)
 
@@ -89,13 +90,14 @@ def strip_self(settings: Settings, addresses: list[str]) -> list[str]:
 
 
 def _send_sync(settings: Settings, msg: EmailMessage, recipients: list[str]) -> None:
+    context = client_context()
     if settings.smtp_port == 465:
         server: smtplib.SMTP = smtplib.SMTP_SSL(
-            settings.smtp_host, settings.smtp_port, timeout=30
+            settings.smtp_host, settings.smtp_port, timeout=30, context=context
         )
     else:
         server = smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=30)
-        server.starttls()
+        server.starttls(context=context)
     try:
         server.login(settings.smtp_user, settings.smtp_pass)
         server.send_message(msg, to_addrs=recipients)

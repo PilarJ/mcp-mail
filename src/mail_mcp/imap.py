@@ -12,7 +12,8 @@ import imaplib
 import logging
 import re
 import unicodedata
-from datetime import datetime
+from dataclasses import dataclass
+from datetime import date, datetime
 from email.utils import parsedate_to_datetime
 from typing import Any, Callable
 
@@ -22,6 +23,7 @@ from imap_tools.errors import MailboxLoginError, UnexpectedCommandStatusError
 from imap_tools.utils import quote
 
 from .settings import Settings
+from .tls import client_context
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +89,54 @@ def reject_control_chars(**values: str | None) -> None:
             )
 
 
+@dataclass(frozen=True)
+class RawMessage:
+    """A message exactly as IMAP returned it. raw is None if it is over the size limit."""
+
+    uid: str
+    raw: bytes | None
+    flags: frozenset[str]
+    internaldate: float | None
+
+
+def parse_fetch_response(data: list) -> tuple[bytes, bytes | None]:
+    """Split an imaplib FETCH response into its metadata and the one literal.
+
+    Metadata can arrive before or after the literal. It is never searched for in the
+    literal itself, because that part was written by whoever sent the message.
+    """
+    meta: list[bytes] = []
+    literals: list[bytes] = []
+    for item in data:
+        if isinstance(item, tuple):
+            meta.append(item[0])
+            literals.append(item[1])
+        elif item:
+            meta.append(item)
+    if len(literals) > 1:
+        raise MailError("Unexpected FETCH response.")
+    return b" ".join(meta), literals[0] if literals else None
+
+
+def parse_flags(meta: bytes) -> frozenset[str]:
+    match = re.search(rb"FLAGS \(([^)]*)\)", meta)
+    if match is None:
+        raise MailError("FETCH response has no flags.")
+    return frozenset(flag.decode("ascii", "replace") for flag in match.group(1).split())
+
+
+def parse_internaldate(meta: bytes) -> float | None:
+    match = re.search(rb'INTERNALDATE "([^"]+)"', meta)
+    if match is None:
+        return None
+    try:
+        # 09-Nov-2026 10:00:00 +0000, and email.utils reads month names without a locale.
+        text = match.group(1).decode("ascii").strip().replace("-", " ", 2)
+        return parsedate_to_datetime(text).timestamp()
+    except (ValueError, TypeError):
+        return None
+
+
 class ImapClient:
     def __init__(self, settings: Settings) -> None:
         self._s = settings
@@ -94,9 +144,9 @@ class ImapClient:
     def _run(self, fn: Callable[[MailBox], Any], folder: str = "INBOX") -> Any:
         failure: MailError
         try:
-            with MailBox(self._s.imap_host, port=self._s.imap_port).login(
-                self._s.imap_user, self._s.imap_pass, initial_folder=folder
-            ) as mailbox:
+            with MailBox(
+                self._s.imap_host, port=self._s.imap_port, ssl_context=client_context()
+            ).login(self._s.imap_user, self._s.imap_pass, initial_folder=folder) as mailbox:
                 return fn(mailbox)
         except MailError:
             raise  # ours already: its text was written here, not by a server
@@ -239,6 +289,42 @@ class ImapClient:
             return origin + found
 
         return await self.run(op, folder)
+
+    async def approval_candidates(
+        self, sender: str, since: date, limit: int, max_bytes: int
+    ) -> list[RawMessage]:
+        """Newest INBOX messages that may be approvals, as the exact bytes on the server.
+
+        The search only narrows things down. Every result is still verified by the caller,
+        so a server or a sender that gets past this filter gains nothing.
+        """
+
+        def fetch(mb: MailBox, uid: str, items: str) -> tuple[bytes, bytes | None] | None:
+            status, data = mb.client.uid("FETCH", uid, items)
+            if status != "OK" or not data or data[0] is None:
+                return None
+            return parse_fetch_response(data)
+
+        def op(mb: MailBox) -> list[RawMessage]:
+            uids = mb.uids(AND(from_=sender, draft=False, date_gte=since))
+            newest = sorted(uids, key=int, reverse=True)[:limit]
+            found: list[RawMessage] = []
+            for uid in newest:
+                size = fetch(mb, uid, "(FLAGS INTERNALDATE RFC822.SIZE)")
+                if size is None:
+                    continue
+                measured = re.search(rb"RFC822\.SIZE (\d+)", size[0])
+                if measured is None or int(measured.group(1)) > max_bytes:
+                    found.append(RawMessage(uid, None, parse_flags(size[0]), parse_internaldate(size[0])))
+                    continue
+                # BODY.PEEK: an approval check must not mark mail as read.
+                full = fetch(mb, uid, "(FLAGS INTERNALDATE BODY.PEEK[])")
+                if full is None or full[1] is None:
+                    continue
+                found.append(RawMessage(uid, full[1], parse_flags(full[0]), parse_internaldate(full[0])))
+            return found
+
+        return await self.run(op, "INBOX")
 
     # ---------- writes ----------
 
