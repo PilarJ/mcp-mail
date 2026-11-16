@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime, timedelta, timezone
+from email import message_from_bytes, policy
 from email.message import EmailMessage
 
 import pytest
@@ -218,7 +219,8 @@ async def test_mail_send_saves_a_copy_in_sent_folder(tmp_path, world, smtp_sent,
     assert copy["folder"] == "Odeslane"
     assert "\\Seen" in copy["flags"]
     assert abs(copy["date"] - datetime.now(timezone.utc)) < timedelta(minutes=1)
-    assert f"Message-ID: {smtp_sent[0]['Message-ID']}".encode() in copy["message"]
+    saved = message_from_bytes(copy["message"], policy=policy.default)
+    assert saved["Message-ID"] == smtp_sent[0]["Message-ID"] == message_id  # parsed: folding does not matter
     if message_id == FOLDED_ID:  # the case of issue #8 really is the folded one
         assert re.search(rb"Message-ID:\r?\n <", copy["message"])
     assert b"Subject: Test subject" in copy["message"]
