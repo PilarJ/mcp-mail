@@ -52,6 +52,12 @@ class Settings(BaseSettings):
     # 0 disables it.
     dedup_minutes: int = Field(default=0, alias="DEDUP_MINUTES")
 
+    # Ceiling on how much mail this instance sends, whatever ALLOWED_RECIPIENTS says: every
+    # recipient (To and Cc) of every mail sent counts, over a rolling hour and a rolling 24
+    # hours, read from the sent-mail audit log. Unset: no ceiling.
+    send_max_per_hour: int | None = Field(default=None, ge=1, alias="SEND_MAX_PER_HOUR")
+    send_max_per_day: int | None = Field(default=None, ge=1, alias="SEND_MAX_PER_DAY")
+
     # Folder that receives a copy of every mail sent through this server. Empty:
     # no copy is kept. The folder must exist; it is never created.
     sent_folder: str = Field(default="", alias="SENT_FOLDER")
@@ -77,6 +83,11 @@ class Settings(BaseSettings):
     @classmethod
     def _strip_slash(cls, v: str) -> str:
         return v.rstrip("/")
+
+    @field_validator("send_max_per_hour", "send_max_per_day", mode="before")
+    @classmethod
+    def _empty_is_unset(cls, v):
+        return None if isinstance(v, str) and not v.strip() else v
 
     @staticmethod
     def _split(raw: str) -> list[str]:

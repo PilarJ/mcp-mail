@@ -3,17 +3,25 @@
 from __future__ import annotations
 
 import base64
+import contextlib
 import functools
 import logging
 import time
 from typing import Annotated, Any, Callable
 
+import anyio
 from fastmcp import FastMCP
 from imap_tools import AND
 from pydantic import Field
 
 from . import approval, render, smtp
-from .guard import InvalidAddress, RecipientGuard, SentLog, canonical_addresses
+from .guard import (
+    InvalidAddress,
+    RecipientGuard,
+    SentLog,
+    SentLogUnreadable,
+    canonical_addresses,
+)
 from .imap import ImapClient, MailError, UnsafeInput
 from .settings import Settings
 
@@ -63,7 +71,22 @@ def register(
     box = settings.mailbox_label
     imap = ImapClient(settings)
     guard = RecipientGuard(settings.allowed_recipients)
-    sent_log = SentLog(settings.sent_log_path, settings.dedup_minutes)
+    # (window, seconds, limit, setting) for each send limit that is set.
+    send_limits = [
+        (window, seconds, limit, name)
+        for window, seconds, limit, name in (
+            ("hour", 3600, settings.send_max_per_hour, "SEND_MAX_PER_HOUR"),
+            ("day", 86400, settings.send_max_per_day, "SEND_MAX_PER_DAY"),
+        )
+        if limit is not None
+    ]
+    sent_log = SentLog(
+        settings.sent_log_path, settings.dedup_minutes,
+        keep_seconds=max((seconds for _, seconds, _, _ in send_limits), default=0),
+    )
+    # With a send limit, count, send and record one mail at a time, so calls made together
+    # cannot all pass the count before any of them is recorded.
+    send_lock = anyio.Lock() if send_limits else None
 
     approvals: approval.ApprovalService | None = None
     # Whether it is on, never who approves: that address is not the model's to know.
@@ -78,6 +101,35 @@ def register(
 
     def refused(detail: str) -> dict:
         return {"status": "refused", "mailbox": box, "detail": detail}
+
+    def over_send_limit(to: list[str], cc: list[str], subject: str) -> dict | None:
+        """A refused result if this mail would pass a send limit, else None."""
+        try:
+            for window, seconds, limit, name in send_limits:
+                used = sent_log.sent_since(seconds)
+                if used + len(to) + len(cc) <= limit:
+                    continue
+                sent_log.record_limit_refusal(to, subject, window)
+                span = "hour" if window == "hour" else "24 hours"
+                return {
+                    **refused(
+                        f"Sending was refused: this mailbox may send to at most {limit} recipients "
+                        f"per {span} ({name}), every To and Cc counts, and {used} have been sent "
+                        f"to in the last {span}. Do not retry now; tell the user."
+                    ),
+                    "error": "send_limit_reached",
+                    "limit": window,
+                }
+        except SentLogUnreadable:
+            logger.error("Send refused: %s cannot be read, so the send limit cannot be checked", settings.sent_log_path.name)
+            return {
+                **refused(
+                    "Sending was refused: the sent-mail log cannot be read, so the send limit "
+                    "cannot be checked. The server owner has to repair it."
+                ),
+                "error": "sent_log_unreadable",
+            }
+        return None
 
     def refuse_unsafe(tool):
         """Turn a refused input into a refused result instead of an error."""
@@ -122,6 +174,9 @@ def register(
             "inbox_unread": inbox and inbox.get("unread"),
             "sending": guard.describe(),
             **approval_report,
+            **({"send_limits": {
+                "per_hour": settings.send_max_per_hour, "per_day": settings.send_max_per_day,
+            }} if send_limits else {}),
             # Where sent mail is filed; None means no copy is kept. "exists" catches a
             # SENT_FOLDER that names a folder the server does not have.
             "sent_copy": {
@@ -323,10 +378,14 @@ def register(
                 f"within the {settings.dedup_minutes} minute repeat guard."
             )
 
-        msg = smtp.build_message(settings, to, subject, body, cc, in_reply_to, references)
-        raw = msg.as_bytes()  # exactly what goes out, kept for the copy in the sent folder
-        await smtp.send(settings, msg, to + cc)
-        sent_log.record(to, subject, kind)
+        async with send_lock or contextlib.nullcontext():
+            over = over_send_limit(to, cc, subject)
+            if over:
+                return over
+            msg = smtp.build_message(settings, to, subject, body, cc, in_reply_to, references)
+            raw = msg.as_bytes()  # exactly what goes out, kept for the copy in the sent folder
+            await smtp.send(settings, msg, to + cc)
+            sent_log.record(to, subject, kind, cc)
         result = {"status": "sent", "mailbox": box, "to": to, "cc": cc, "subject": subject}
         if not settings.sent_folder:  # filing a copy is opt-in
             return result

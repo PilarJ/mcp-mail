@@ -124,6 +124,30 @@ state refuses. `sent_log.json` gains the kinds `approval_requested`, `approved`,
 - **Status does not name the approver.** `mail_status` and
   `mail_list_allowed_recipients` report `approval_enabled` when it is on.
 
+## Send limits
+
+The allowlist decides where mail can go, not how much of it. `SEND_MAX_PER_HOUR` and
+`SEND_MAX_PER_DAY` put a ceiling on volume that holds whatever `ALLOWED_RECIPIENTS` says,
+including `*`, so a bad prompt or a loop cannot send a burst.
+
+- **What counts.** Every recipient of every mail that went out through `mail_send`,
+  `mail_reply` or `mail_send_approved`: a mail to one address with two in Cc counts three.
+  A mail is refused whole if it would pass either limit, so a single mail to more recipients
+  than the limit never goes. Requests to the approver, refused sends and failed SMTP sends
+  do not count.
+- **Where it is counted.** From `sent_log.json` in `DATA_DIR`, over a rolling hour and a
+  rolling 24 hours, so a restart does not reset it. With a limit set, entries the limit still
+  counts are kept past the log's usual 500, and a log that exists but cannot be read refuses
+  every send until it is repaired; without a limit nothing changes.
+- **When it is reached.** `mail_send` and `mail_reply` return `status: refused` with
+  `error: send_limit_reached` and `limit: hour` or `day`, and the refusal is logged as
+  `send_limit_refused`. Nothing is queued. An approved send is counted but never refused
+  by these limits: a human approved that one message, and approvals have their own limits.
+- **Concurrency.** With a limit set, sends run one at a time, so calls made together cannot
+  all slip under it.
+
+`mail_status` reports the limits as `send_limits` when one is set.
+
 ## Why a GitHub OAuth app?
 
 GitHub is only the login screen; it has nothing to do with your mail. Remote
@@ -222,6 +246,7 @@ Note the `/mcp` suffix; the bare domain is not the endpoint.
 | `ALLOW_DELETE` | `true` registers `mail_delete`, which expunges permanently; default off |
 | `SENT_FOLDER` | Existing folder that receives a copy of sent mail, its IMAP name as `mail_list_folders` shows it; empty keeps no copy |
 | `DEDUP_MINUTES` | Refuse a second mail to the same recipient within this window; 0 disables |
+| `SEND_MAX_PER_HOUR` / `SEND_MAX_PER_DAY` | Most recipients this instance sends to in a rolling hour / 24 hours, every To and Cc counted; unset or empty means no limit, below 1 stops the server; see below |
 | `APPROVER_ADDRESS` | Sole approver for sending outside the allowlist; unset removes the two tools; invalid or this mailbox's own address stops the server |
 | `APPROVAL_TTL_HOURS` | How long a request stays valid; default 72 |
 | `APPROVAL_MAX_PER_HOUR` / `APPROVAL_MAX_PENDING` | Limits on requests to the approver; defaults 5 and 10 |
