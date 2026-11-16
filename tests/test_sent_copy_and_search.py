@@ -17,6 +17,7 @@ from fastmcp import Client, FastMCP
 from imap_tools.mailbox import BaseMailBox
 
 from mail_mcp import imap as imap_module
+from mail_mcp import smtp as smtp_module
 from mail_mcp import tools
 from mail_mcp.imap import ImapClient
 from mail_mcp.settings import Settings
@@ -198,7 +199,17 @@ async def test_without_sent_folder_no_copy_is_filed(tmp_path, world, smtp_sent):
     assert "sent_copy" not in result
 
 
-async def test_mail_send_saves_a_copy_in_sent_folder(tmp_path, world, smtp_sent):
+# make_msgid() builds the Message-ID from the time, the process id, a random number and the host's name.
+# When "Message-ID: <id>" is longer than 78 characters but the id alone fits on a line, the e-mail
+# generator folds the header onto two lines (RFC 5322 allows it). The length depends on the machine and
+# on chance, which is why this test failed on some CI runs and passed on a re-run (issue #8).
+SHORT_ID = "<1@mail.test>"
+FOLDED_ID = "<179482928533.2478.7478108949779100895@build-host-01.ci.example.test>"
+
+
+@pytest.mark.parametrize("message_id", [SHORT_ID, FOLDED_ID])
+async def test_mail_send_saves_a_copy_in_sent_folder(tmp_path, world, smtp_sent, monkeypatch, message_id):
+    monkeypatch.setattr(smtp_module, "make_msgid", lambda: message_id)
     result = await call(tmp_path, "mail_send", SEND, SENT_FOLDER="Odeslane")
     assert result["status"] == "sent"
     assert len(smtp_sent) == 1
@@ -208,6 +219,8 @@ async def test_mail_send_saves_a_copy_in_sent_folder(tmp_path, world, smtp_sent)
     assert "\\Seen" in copy["flags"]
     assert abs(copy["date"] - datetime.now(timezone.utc)) < timedelta(minutes=1)
     assert f"Message-ID: {smtp_sent[0]['Message-ID']}".encode() in copy["message"]
+    if message_id == FOLDED_ID:  # the case of issue #8 really is the folded one
+        assert re.search(rb"Message-ID:\r?\n <", copy["message"])
     assert b"Subject: Test subject" in copy["message"]
     assert re.search(rb"(?m)^Date: .+", copy["message"])
     assert result["sent_copy"] == {"saved": True, "folder": "Odeslane"}
