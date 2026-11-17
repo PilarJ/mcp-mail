@@ -385,7 +385,10 @@ def register(
             msg = smtp.build_message(settings, to, subject, body, cc, in_reply_to, references)
             raw = msg.as_bytes()  # exactly what goes out, kept for the copy in the sent folder
             await smtp.send(settings, msg, to + cc)
-            sent_log.record(to, subject, kind, cc)
+            try:
+                sent_log.record(to, subject, kind, cc)
+            except SentLogUnreadable:  # it went out; the broken log refuses every later send
+                logger.error("Sent but not logged: %s cannot be read", settings.sent_log_path.name)
         result = {"status": "sent", "mailbox": box, "to": to, "cc": cc, "subject": subject}
         if not settings.sent_folder:  # filing a copy is opt-in
             return result

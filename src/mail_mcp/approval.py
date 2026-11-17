@@ -35,7 +35,13 @@ from dkim.dnsplug import get_txt
 from dkim.util import parse_tag_value
 
 from . import smtp
-from .guard import ADDRESS_RE, InvalidAddress, SentLog, canonical_address
+from .guard import (
+    ADDRESS_RE,
+    InvalidAddress,
+    SentLog,
+    SentLogUnreadable,
+    canonical_address,
+)
 from .imap import ImapClient, MailError, RawMessage
 from .settings import Settings
 
@@ -601,17 +607,30 @@ class ApprovalService:
     def _refused(self, detail: str) -> dict:
         return {"status": "refused", "mailbox": self._s.mailbox_label, "detail": detail}
 
+    def _log_unreadable(self) -> dict:
+        logger.error("Approval refused: %s cannot be read, so the send limit cannot be checked", self._s.sent_log_path.name)
+        return {
+            **self._refused(
+                "Refused: the sent-mail log cannot be read, so the send limit cannot be checked. "
+                "The server owner has to repair it."
+            ),
+            "error": "sent_log_unreadable",
+        }
+
     async def request(self, to: str, subject: str, body: str) -> dict:
         try:
             return await self._request(to, subject, body)
         except ApprovalStateError as exc:
             logger.error("Approval state unusable: %s", type(exc.__cause__).__name__)
             return self._refused("The approval state cannot be read, so approval is unavailable.")
+        except SentLogUnreadable:
+            return self._log_unreadable()
 
     async def _request(self, to: str, subject: str, body: str) -> dict:
         problem = concept_problem(self._s, to, subject, body)
         if problem:
             return self._refused(problem)
+        self._log.check_readable()  # before anything is stored or mailed
 
         now = self._clock()
         code = new_code()
@@ -668,8 +687,11 @@ class ApprovalService:
         except ApprovalStateError as exc:
             logger.error("Approval state unusable: %s", type(exc.__cause__).__name__)
             return self._refused("The approval state cannot be read, so nothing was sent.")
+        except SentLogUnreadable:
+            return self._log_unreadable()
 
     async def _send(self, approval_id: str, to: str, subject: str, body: str) -> dict:
+        self._log.check_readable()  # before the approval is voided or spent
         approval = await anyio.to_thread.run_sync(self._store.get, approval_id)
         if approval is None:
             return self._refused("There is no such approval.")
@@ -725,7 +747,10 @@ class ApprovalService:
             logger.warning("Approved message not sent: %s", exc.source or exc.code)
             return self._refused("Sending failed. The approval stays spent, so request a new one.")
 
-        self._log.record([to], subject, "sent_approved")
+        try:
+            self._log.record([to], subject, "sent_approved")
+        except SentLogUnreadable:  # it went out; the broken log refuses every later send
+            logger.error("Approved message sent but not logged: %s cannot be read", self._s.sent_log_path.name)
         result = {"status": "sent", "mailbox": self._s.mailbox_label, "to": to, "subject": subject}
         if self._file_copy is not None:
             result["sent_copy"] = await self._file_copy(raw)

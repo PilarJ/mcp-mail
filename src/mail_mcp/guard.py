@@ -189,10 +189,13 @@ class SentLog:
         self._keep_seconds = keep_seconds
 
     def _read(self) -> list[dict]:
+        """The entries, leniently: an unreadable log or one of the wrong shape reads as empty."""
         try:
-            return json.loads(self._path.read_text()).get("sent", [])
+            data = json.loads(self._path.read_text())
         except (OSError, ValueError):
             return []
+        entries = data.get("sent", []) if isinstance(data, dict) else []
+        return [entry for entry in entries if isinstance(entry, dict)] if isinstance(entries, list) else []
 
     def _read_strict(self) -> list[dict]:
         """The entries, for counting. A missing log is empty; anything unreadable raises."""
@@ -212,16 +215,23 @@ class SentLog:
             raise SentLogUnreadable()
         return entries
 
+    def check_readable(self) -> None:
+        """With a send limit, raise SentLogUnreadable before anything would write the log."""
+        if self._keep_seconds:
+            self._read_strict()
+
     def recently_sent_to(self, recipients: list[str]) -> str | None:
         if self._dedup_minutes <= 0:
             return None
         cutoff = (datetime.now() - timedelta(minutes=self._dedup_minutes)).isoformat()
         targets = {extract_address(r) for r in recipients}
         for entry in self._read():
-            if entry.get("sent_at", "") < cutoff or entry.get("kind") in NOT_SENT_KINDS:
+            sent_at = entry.get("sent_at")
+            if not isinstance(sent_at, str) or sent_at < cutoff or entry.get("kind") in NOT_SENT_KINDS:
                 continue
-            if extract_address(entry.get("to", "")) in targets:
-                return entry.get("sent_at", "")
+            to = entry.get("to")
+            if isinstance(to, str) and extract_address(to) in targets:
+                return sent_at
         return None
 
     def sent_since(self, seconds: int) -> int:
@@ -266,7 +276,9 @@ class SentLog:
         )
 
     def _append(self, new) -> None:
-        entries = self._read()
+        # With a send limit, a log that cannot be read is evidence and the count: never
+        # replaced by a fresh one, which would reset the limit (raises SentLogUnreadable).
+        entries = self._read_strict() if self._keep_seconds else self._read()
         entries.extend(new)
         self._path.parent.mkdir(parents=True, exist_ok=True)
         tmp = self._path.with_suffix(".tmp")

@@ -319,3 +319,172 @@ async def test_a_limit_refusal_does_not_trigger_the_repeat_guard(make_harness):
             entry["sent_at"] = "2000-01-01T00:00:00"  # the sent mail leaves both windows
     (harness.settings.data_dir / "sent_log.json").write_text(json.dumps(entries))
     assert (await send(harness, to=[OTHER]))["status"] == "sent"
+
+
+# ---------------------------------------------------------------- a broken log is never overwritten (review of #7)
+
+BROKEN_LOGS = ("{corrupt", "{not json", '{"sent": "x"}', '["x"]', '{"sent": [1]}', '{"sent": [{"sent_at": 1}]}')
+
+
+def assert_log_refusal(result: dict) -> None:
+    assert result["status"] == "refused", result
+    assert result["error"] == "sent_log_unreadable"
+
+
+def unreadable(path) -> bool:
+    """Make the log unreadable; False where that is impossible (root reads anything)."""
+    path.chmod(0)
+    try:
+        path.read_bytes()
+    except PermissionError:
+        return True
+    path.chmod(0o600)
+    return False
+
+
+@pytest.mark.parametrize("broken", BROKEN_LOGS)
+async def test_an_approval_request_does_not_reset_a_broken_log(make_harness, broken):
+    """The reviewer's scenario: limit reached, log broken, an approval request must not
+    replace the log with a fresh one and so let the next send through."""
+    harness = make_harness(APPROVER_ADDRESS=APPROVER, SEND_MAX_PER_HOUR="2")
+    await send(harness, subject="m1")
+    await send(harness, subject="m2")
+    path = harness.settings.data_dir / "sent_log.json"
+    path.write_text(broken)
+    assert_log_refusal(await send(harness))
+
+    request = await harness.call("mail_request_approval", to=ALLOWLISTED, subject=SUBJECT, body=BODY)
+
+    assert_log_refusal(request)
+    assert harness.to_approver() == []
+    assert path.read_text() == broken
+    assert_log_refusal(await send(harness))
+    assert len(harness.delivered()) == 2
+
+
+async def test_an_approval_request_does_not_replace_an_unreadable_log(make_harness):
+    harness = make_harness(APPROVER_ADDRESS=APPROVER, SEND_MAX_PER_HOUR="2")
+    await send(harness, subject="m1")
+    await send(harness, subject="m2")
+    path = harness.settings.data_dir / "sent_log.json"
+    before = path.read_bytes()
+    if not unreadable(path):
+        pytest.skip("running as root, a mode 000 file stays readable")
+    try:
+        assert_log_refusal(await send(harness))
+        assert_log_refusal(await harness.call("mail_request_approval", to=ALLOWLISTED, subject=SUBJECT, body=BODY))
+        assert_log_refusal(await send(harness))
+        assert harness.to_approver() == []
+        assert path.stat().st_mode & 0o777 == 0  # still the same, unreplaced file
+    finally:
+        path.chmod(0o600)
+    assert path.read_bytes() == before
+    assert len(harness.delivered()) == 2
+
+
+@pytest.mark.parametrize("broken", BROKEN_LOGS)
+async def test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept(make_harness, broken):
+    harness = make_harness(APPROVER_ADDRESS=APPROVER, SEND_MAX_PER_HOUR="5")
+    pending = await harness.request()
+    harness.approve(pending)
+    path = harness.settings.data_dir / "sent_log.json"
+    path.write_text(broken)
+
+    assert_log_refusal(await harness.send(pending))
+
+    assert harness.delivered() == []
+    assert path.read_text() == broken
+    # Nothing was spent: once the owner repairs the log, the same approval sends.
+    path.unlink()
+    assert (await harness.send(pending))["status"] == "sent"
+
+
+@pytest.mark.parametrize("broken", BROKEN_LOGS)
+async def test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval(make_harness, broken):
+    harness = make_harness(APPROVER_ADDRESS=APPROVER, SEND_MAX_PER_HOUR="5")
+    pending = await harness.request()
+    harness.approve(pending)
+    path = harness.settings.data_dir / "sent_log.json"
+    path.write_text(broken)
+
+    assert_log_refusal(await harness.send(pending, body="Something else"))
+
+    assert path.read_text() == broken
+    path.unlink()
+    assert (await harness.send(pending))["status"] == "sent"
+
+
+async def test_without_limits_an_approval_request_on_a_broken_log_works_as_before(make_harness):
+    harness = make_harness(APPROVER_ADDRESS=APPROVER)
+    (harness.settings.data_dir / "sent_log.json").write_text("{corrupt")
+    pending = await harness.request()
+    harness.approve(pending)
+    assert (await harness.send(pending))["status"] == "sent"
+
+
+@pytest.mark.parametrize("broken", BROKEN_LOGS)
+async def test_repeat_guard_on_a_malformed_log_refuses_cleanly_with_a_limit(make_harness, broken):
+    """DEDUP_MINUTES reads the log before the limit check; a wrong shape must not crash it."""
+    harness = make_harness(SEND_MAX_PER_HOUR="2", DEDUP_MINUTES="60", **OPEN)
+    path = harness.settings.data_dir / "sent_log.json"
+    path.write_text(broken)
+
+    assert_log_refusal(await send(harness))
+    assert_log_refusal(await harness.call("mail_send", to=[OTHER], subject=SUBJECT, body=BODY, confirm=True))
+
+    assert harness.delivered() == []
+    assert path.read_text() == broken
+
+
+@pytest.mark.parametrize("broken", BROKEN_LOGS)
+async def test_repeat_guard_on_a_malformed_log_without_a_limit_sends_as_before(make_harness, broken):
+    harness = make_harness(DEDUP_MINUTES="60", **OPEN)
+    (harness.settings.data_dir / "sent_log.json").write_text(broken)
+    assert (await send(harness))["status"] == "sent"
+
+
+@pytest.mark.parametrize("broken", BROKEN_LOGS)
+async def test_repeat_guard_of_an_approved_send_on_a_malformed_log_without_a_limit(make_harness, broken):
+    harness = make_harness(APPROVER_ADDRESS=APPROVER, DEDUP_MINUTES="60")
+    pending = await harness.request()
+    harness.approve(pending)
+    (harness.settings.data_dir / "sent_log.json").write_text(broken)
+    assert (await harness.send(pending))["status"] == "sent"
+
+
+def break_log_while_sending(harness, broken: str = "{corrupt") -> None:
+    """The log breaks between the limit check and the record (disk, another process)."""
+    from mail_mcp import smtp
+
+    original = smtp.send
+    path = harness.settings.data_dir / "sent_log.json"
+
+    async def send_then_break(settings, message, recipients):
+        await original(settings, message, recipients)
+        if APPROVER not in recipients:
+            path.write_text(broken)
+
+    harness.monkeypatch.setattr(smtp, "send", send_then_break)
+
+
+async def test_mail_that_went_out_is_reported_sent_even_if_the_log_broke_meanwhile(make_harness):
+    harness = make_harness(SEND_MAX_PER_HOUR="5", **OPEN)
+    break_log_while_sending(harness)
+
+    assert (await send(harness))["status"] == "sent"
+
+    assert len(harness.delivered()) == 1
+    assert (harness.settings.data_dir / "sent_log.json").read_text() == "{corrupt"
+    assert_log_refusal(await send(harness))
+
+
+async def test_an_approved_mail_that_went_out_is_reported_sent_even_if_the_log_broke(make_harness):
+    harness = make_harness(APPROVER_ADDRESS=APPROVER, SEND_MAX_PER_HOUR="5")
+    pending = await harness.request()
+    harness.approve(pending)
+    break_log_while_sending(harness)
+
+    assert (await harness.send(pending))["status"] == "sent"
+
+    assert len(harness.delivered()) == 1
+    assert (harness.settings.data_dir / "sent_log.json").read_text() == "{corrupt"
