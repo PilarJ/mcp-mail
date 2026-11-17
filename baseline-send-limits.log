@@ -1,0 +1,1836 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0 -- /Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-1f486ba
+configfile: pyproject.toml
+plugins: platformdirs-4.14.5, anyio-4.16.0
+collecting ... collected 75 items
+
+repos/mcp-mail-qa7-1f486ba::test_unset_limits_keep_todays_behaviour PASSED [  1%]
+repos/mcp-mail-qa7-1f486ba::test_unset_limits_ignore_an_unreadable_log_as_before PASSED [  2%]
+repos/mcp-mail-qa7-1f486ba::test_hour_limit_sends_up_to_the_limit_and_refuses_the_next PASSED [  4%]
+repos/mcp-mail-qa7-1f486ba::test_refusal_is_written_to_the_audit_log PASSED [  5%]
+repos/mcp-mail-qa7-1f486ba::test_refusals_do_not_count_against_the_limit PASSED [  6%]
+repos/mcp-mail-qa7-1f486ba::test_hour_window_rolls PASSED                [  8%]
+repos/mcp-mail-qa7-1f486ba::test_entries_from_before_this_change_count_one_each PASSED [  9%]
+repos/mcp-mail-qa7-1f486ba::test_day_limit_counts_past_the_hour PASSED   [ 10%]
+repos/mcp-mail-qa7-1f486ba::test_day_window_rolls PASSED                 [ 12%]
+repos/mcp-mail-qa7-1f486ba::test_hour_limit_is_reported_first_when_both_are_reached PASSED [ 13%]
+repos/mcp-mail-qa7-1f486ba::test_every_recipient_counts_to_and_cc PASSED [ 14%]
+repos/mcp-mail-qa7-1f486ba::test_one_message_to_more_recipients_than_the_limit_is_refused PASSED [ 16%]
+repos/mcp-mail-qa7-1f486ba::test_reply_is_limited_too PASSED             [ 17%]
+repos/mcp-mail-qa7-1f486ba::test_a_reply_counts_against_the_limit PASSED [ 18%]
+repos/mcp-mail-qa7-1f486ba::test_approval_requests_do_not_count PASSED   [ 20%]
+repos/mcp-mail-qa7-1f486ba::test_an_approved_send_counts PASSED          [ 21%]
+repos/mcp-mail-qa7-1f486ba::test_refusals_before_the_limit_check_are_not_counted PASSED [ 22%]
+repos/mcp-mail-qa7-1f486ba::test_smtp_failure_is_not_counted PASSED      [ 24%]
+repos/mcp-mail-qa7-1f486ba::test_restart_does_not_reset_the_count PASSED [ 25%]
+repos/mcp-mail-qa7-1f486ba::test_unreadable_log_refuses_when_a_limit_is_set PASSED [ 26%]
+repos/mcp-mail-qa7-1f486ba::test_a_missing_log_is_an_empty_log PASSED    [ 28%]
+repos/mcp-mail-qa7-1f486ba::test_concurrent_sends_cannot_pass_the_limit_together PASSED [ 29%]
+repos/mcp-mail-qa7-1f486ba::test_log_keeps_every_counted_entry_of_the_day_past_500 PASSED [ 30%]
+repos/mcp-mail-qa7-1f486ba::test_without_limits_the_log_is_still_cut_at_500 PASSED [ 32%]
+repos/mcp-mail-qa7-1f486ba::test_a_limit_below_one_or_not_a_number_stops_the_server[0-SEND_MAX_PER_HOUR] PASSED [ 33%]
+repos/mcp-mail-qa7-1f486ba::test_a_limit_below_one_or_not_a_number_stops_the_server[0-SEND_MAX_PER_DAY] PASSED [ 34%]
+repos/mcp-mail-qa7-1f486ba::test_a_limit_below_one_or_not_a_number_stops_the_server[-1-SEND_MAX_PER_HOUR] PASSED [ 36%]
+repos/mcp-mail-qa7-1f486ba::test_a_limit_below_one_or_not_a_number_stops_the_server[-1-SEND_MAX_PER_DAY] PASSED [ 37%]
+repos/mcp-mail-qa7-1f486ba::test_a_limit_below_one_or_not_a_number_stops_the_server[x-SEND_MAX_PER_HOUR] PASSED [ 38%]
+repos/mcp-mail-qa7-1f486ba::test_a_limit_below_one_or_not_a_number_stops_the_server[x-SEND_MAX_PER_DAY] PASSED [ 40%]
+repos/mcp-mail-qa7-1f486ba::test_an_empty_limit_is_unset[SEND_MAX_PER_HOUR] PASSED [ 41%]
+repos/mcp-mail-qa7-1f486ba::test_an_empty_limit_is_unset[SEND_MAX_PER_DAY] PASSED [ 42%]
+repos/mcp-mail-qa7-1f486ba::test_status_reports_the_limits PASSED        [ 44%]
+repos/mcp-mail-qa7-1f486ba::test_status_without_limits_is_unchanged PASSED [ 45%]
+repos/mcp-mail-qa7-1f486ba::test_a_limit_refusal_does_not_trigger_the_repeat_guard PASSED [ 46%]
+repos/mcp-mail-qa7-1f486ba::test_an_approval_request_does_not_reset_a_broken_log[{corrupt] FAILED [ 48%]
+repos/mcp-mail-qa7-1f486ba::test_an_approval_request_does_not_reset_a_broken_log[{not json] FAILED [ 49%]
+repos/mcp-mail-qa7-1f486ba::test_an_approval_request_does_not_reset_a_broken_log[{"sent": "x"}] FAILED [ 50%]
+repos/mcp-mail-qa7-1f486ba::test_an_approval_request_does_not_reset_a_broken_log[["x"]] FAILED [ 52%]
+repos/mcp-mail-qa7-1f486ba::test_an_approval_request_does_not_reset_a_broken_log[{"sent": [1]}] FAILED [ 53%]
+repos/mcp-mail-qa7-1f486ba::test_an_approval_request_does_not_reset_a_broken_log[{"sent": [{"sent_at": 1}]}] FAILED [ 54%]
+repos/mcp-mail-qa7-1f486ba::test_an_approval_request_does_not_replace_an_unreadable_log FAILED [ 56%]
+repos/mcp-mail-qa7-1f486ba::test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept[{corrupt] FAILED [ 57%]
+repos/mcp-mail-qa7-1f486ba::test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept[{not json] FAILED [ 58%]
+repos/mcp-mail-qa7-1f486ba::test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept[{"sent": "x"}] FAILED [ 60%]
+repos/mcp-mail-qa7-1f486ba::test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept[["x"]] FAILED [ 61%]
+repos/mcp-mail-qa7-1f486ba::test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept[{"sent": [1]}] FAILED [ 62%]
+repos/mcp-mail-qa7-1f486ba::test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept[{"sent": [{"sent_at": 1}]}] FAILED [ 64%]
+repos/mcp-mail-qa7-1f486ba::test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval[{corrupt] FAILED [ 65%]
+repos/mcp-mail-qa7-1f486ba::test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval[{not json] FAILED [ 66%]
+repos/mcp-mail-qa7-1f486ba::test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval[{"sent": "x"}] FAILED [ 68%]
+repos/mcp-mail-qa7-1f486ba::test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval[["x"]] FAILED [ 69%]
+repos/mcp-mail-qa7-1f486ba::test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval[{"sent": [1]}] FAILED [ 70%]
+repos/mcp-mail-qa7-1f486ba::test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval[{"sent": [{"sent_at": 1}]}] FAILED [ 72%]
+repos/mcp-mail-qa7-1f486ba::test_without_limits_an_approval_request_on_a_broken_log_works_as_before PASSED [ 73%]
+repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_refuses_cleanly_with_a_limit[{corrupt] PASSED [ 74%]
+repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_refuses_cleanly_with_a_limit[{not json] PASSED [ 76%]
+repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_refuses_cleanly_with_a_limit[{"sent": "x"}] FAILED [ 77%]
+repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_refuses_cleanly_with_a_limit[["x"]] FAILED [ 78%]
+repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_refuses_cleanly_with_a_limit[{"sent": [1]}] FAILED [ 80%]
+repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_refuses_cleanly_with_a_limit[{"sent": [{"sent_at": 1}]}] FAILED [ 81%]
+repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_without_a_limit_sends_as_before[{corrupt] PASSED [ 82%]
+repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_without_a_limit_sends_as_before[{not json] PASSED [ 84%]
+repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_without_a_limit_sends_as_before[{"sent": "x"}] FAILED [ 85%]
+repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_without_a_limit_sends_as_before[["x"]] FAILED [ 86%]
+repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_without_a_limit_sends_as_before[{"sent": [1]}] FAILED [ 88%]
+repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_without_a_limit_sends_as_before[{"sent": [{"sent_at": 1}]}] FAILED [ 89%]
+repos/mcp-mail-qa7-1f486ba::test_repeat_guard_of_an_approved_send_on_a_malformed_log_without_a_limit[{corrupt] PASSED [ 90%]
+repos/mcp-mail-qa7-1f486ba::test_repeat_guard_of_an_approved_send_on_a_malformed_log_without_a_limit[{not json] PASSED [ 92%]
+repos/mcp-mail-qa7-1f486ba::test_repeat_guard_of_an_approved_send_on_a_malformed_log_without_a_limit[{"sent": "x"}] FAILED [ 93%]
+repos/mcp-mail-qa7-1f486ba::test_repeat_guard_of_an_approved_send_on_a_malformed_log_without_a_limit[["x"]] FAILED [ 94%]
+repos/mcp-mail-qa7-1f486ba::test_repeat_guard_of_an_approved_send_on_a_malformed_log_without_a_limit[{"sent": [1]}] FAILED [ 96%]
+repos/mcp-mail-qa7-1f486ba::test_repeat_guard_of_an_approved_send_on_a_malformed_log_without_a_limit[{"sent": [{"sent_at": 1}]}] FAILED [ 97%]
+repos/mcp-mail-qa7-1f486ba::test_mail_that_went_out_is_reported_sent_even_if_the_log_broke_meanwhile FAILED [ 98%]
+repos/mcp-mail-qa7-1f486ba::test_an_approved_mail_that_went_out_is_reported_sent_even_if_the_log_broke FAILED [100%]
+
+=================================== FAILURES ===================================
+________ test_an_approval_request_does_not_reset_a_broken_log[{corrupt] ________
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:358: in test_an_approval_request_does_not_reset_a_broken_log
+    assert_log_refusal(request)
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:330: in assert_log_refusal
+    assert result["status"] == "refused", result
+E   AssertionError: {'status': 'approval_requested', 'mailbox': 'info@example.org', 'approval_id': '490d36fcdcdc29f9', 'to': 'friend@example.net', ...}
+E   assert 'approval_requested' == 'refused'
+E     
+E     - refused
+E     + approval_requested
+------------------------------ Captured log call -------------------------------
+ERROR    mail_mcp.tools:tools.py:124 Send refused: sent_log.json cannot be read, so the send limit cannot be checked
+_______ test_an_approval_request_does_not_reset_a_broken_log[{not json] ________
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:358: in test_an_approval_request_does_not_reset_a_broken_log
+    assert_log_refusal(request)
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:330: in assert_log_refusal
+    assert result["status"] == "refused", result
+E   AssertionError: {'status': 'approval_requested', 'mailbox': 'info@example.org', 'approval_id': 'a43a8e3d9c9f938e', 'to': 'friend@example.net', ...}
+E   assert 'approval_requested' == 'refused'
+E     
+E     - refused
+E     + approval_requested
+------------------------------ Captured log call -------------------------------
+ERROR    mail_mcp.tools:tools.py:124 Send refused: sent_log.json cannot be read, so the send limit cannot be checked
+_____ test_an_approval_request_does_not_reset_a_broken_log[{"sent": "x"}] ______
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:356: in test_an_approval_request_does_not_reset_a_broken_log
+    request = await harness.call("mail_request_approval", to=ALLOWLISTED, subject=SUBJECT, body=BODY)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:442: in call
+    result = await client.call_tool(name, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:311: in call_tool
+    return await self._parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:200: in _parse_call_tool_result
+    return await _parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:425: in _parse_call_tool_result
+    raise ToolError(msg)
+E   fastmcp.exceptions.ToolError: Error calling tool 'mail_request_approval': 'str' object has no attribute 'extend'
+----------------------------- Captured stderr call -----------------------------
+[11/17/26 09:25:12] Error calling tool 'mail_request_approval'                  
+                    ╭─────────── Traceback (most recent call last) ────────────╮
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/server/server.py:1390 in call_tool       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/tools/base.py:421 in _run                │
+                    │                                                          │
+                    │                 ... 6 frames hidden ...                  │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:256 in     │
+                    │ record                                                   │
+                    │                                                          │
+                    │   253 │   │   if kind not in NOT_SENT_KINDS:             │
+                    │   254 │   │   │   # One id per mail and its recipient co │
+                    │       count.                                             │
+                    │   255 │   │   │   extra = {"send_id": secrets.token_hex( │
+                    │       len(cc or [])}                                     │
+                    │ ❱ 256 │   │   self._append(                              │
+                    │   257 │   │   │   {"to": extract_address(recipient), "su │
+                    │       "kind": kind, **extra}                             │
+                    │   258 │   │   │   for recipient in recipients            │
+                    │   259 │   │   )                                          │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:270 in     │
+                    │ _append                                                  │
+                    │                                                          │
+                    │   267 │                                                  │
+                    │   268 │   def _append(self, new) -> None:                │
+                    │   269 │   │   entries = self._read()                     │
+                    │ ❱ 270 │   │   entries.extend(new)                        │
+                    │   271 │   │   self._path.parent.mkdir(parents=True, exis │
+                    │   272 │   │   tmp = self._path.with_suffix(".tmp")       │
+                    │   273 │   │   tmp.write_text(json.dumps({"sent": self._c │
+                    │       ensure_ascii=False))                               │
+                    ╰──────────────────────────────────────────────────────────╯
+                    AttributeError: 'str' object has no attribute 'extend'      
+------------------------------ Captured log call -------------------------------
+ERROR    mail_mcp.tools:tools.py:124 Send refused: sent_log.json cannot be read, so the send limit cannot be checked
+ERROR    fastmcp.server.server:server.py:1421 Error calling tool 'mail_request_approval'
+Traceback (most recent call last):
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/server/server.py", line 1390, in call_tool
+    return await tool._run(arguments or {}, task_meta=task_meta)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/base.py", line 421, in _run
+    return await self.run(arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 418, in run
+    result = await self._execute(type_adapter, exec_is_async, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 465, in _execute
+    result = await result
+             ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 88, in wrapper
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 451, in mail_request_approval
+    return await approvals.request(to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 606, in request
+    return await self._request(to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 650, in _request
+    self._log.record([to], subject, "approval_requested")
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 256, in record
+    self._append(
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 270, in _append
+    entries.extend(new)
+    ^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'extend'
+_________ test_an_approval_request_does_not_reset_a_broken_log[["x"]] __________
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:356: in test_an_approval_request_does_not_reset_a_broken_log
+    request = await harness.call("mail_request_approval", to=ALLOWLISTED, subject=SUBJECT, body=BODY)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:442: in call
+    result = await client.call_tool(name, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:311: in call_tool
+    return await self._parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:200: in _parse_call_tool_result
+    return await _parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:425: in _parse_call_tool_result
+    raise ToolError(msg)
+E   fastmcp.exceptions.ToolError: Error calling tool 'mail_request_approval': 'list' object has no attribute 'get'
+----------------------------- Captured stderr call -----------------------------
+                    Error calling tool 'mail_request_approval'                  
+                    ╭─────────── Traceback (most recent call last) ────────────╮
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/server/server.py:1390 in call_tool       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/tools/base.py:421 in _run                │
+                    │                                                          │
+                    │                 ... 7 frames hidden ...                  │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:269 in     │
+                    │ _append                                                  │
+                    │                                                          │
+                    │   266 │   │   )                                          │
+                    │   267 │                                                  │
+                    │   268 │   def _append(self, new) -> None:                │
+                    │ ❱ 269 │   │   entries = self._read()                     │
+                    │   270 │   │   entries.extend(new)                        │
+                    │   271 │   │   self._path.parent.mkdir(parents=True, exis │
+                    │   272 │   │   tmp = self._path.with_suffix(".tmp")       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:193 in     │
+                    │ _read                                                    │
+                    │                                                          │
+                    │   190 │                                                  │
+                    │   191 │   def _read(self) -> list[dict]:                 │
+                    │   192 │   │   try:                                       │
+                    │ ❱ 193 │   │   │   return json.loads(self._path.read_text │
+                    │   194 │   │   except (OSError, ValueError):              │
+                    │   195 │   │   │   return []                              │
+                    │   196                                                    │
+                    ╰──────────────────────────────────────────────────────────╯
+                    AttributeError: 'list' object has no attribute 'get'        
+------------------------------ Captured log call -------------------------------
+ERROR    mail_mcp.tools:tools.py:124 Send refused: sent_log.json cannot be read, so the send limit cannot be checked
+ERROR    fastmcp.server.server:server.py:1421 Error calling tool 'mail_request_approval'
+Traceback (most recent call last):
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/server/server.py", line 1390, in call_tool
+    return await tool._run(arguments or {}, task_meta=task_meta)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/base.py", line 421, in _run
+    return await self.run(arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 418, in run
+    result = await self._execute(type_adapter, exec_is_async, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 465, in _execute
+    result = await result
+             ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 88, in wrapper
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 451, in mail_request_approval
+    return await approvals.request(to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 606, in request
+    return await self._request(to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 650, in _request
+    self._log.record([to], subject, "approval_requested")
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 256, in record
+    self._append(
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 269, in _append
+    entries = self._read()
+              ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 193, in _read
+    return json.loads(self._path.read_text()).get("sent", [])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'
+_____ test_an_approval_request_does_not_reset_a_broken_log[{"sent": [1]}] ______
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:358: in test_an_approval_request_does_not_reset_a_broken_log
+    assert_log_refusal(request)
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:330: in assert_log_refusal
+    assert result["status"] == "refused", result
+E   AssertionError: {'status': 'approval_requested', 'mailbox': 'info@example.org', 'approval_id': '0822840327ee7a31', 'to': 'friend@example.net', ...}
+E   assert 'approval_requested' == 'refused'
+E     
+E     - refused
+E     + approval_requested
+------------------------------ Captured log call -------------------------------
+ERROR    mail_mcp.tools:tools.py:124 Send refused: sent_log.json cannot be read, so the send limit cannot be checked
+_ test_an_approval_request_does_not_reset_a_broken_log[{"sent": [{"sent_at": 1}]}] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:358: in test_an_approval_request_does_not_reset_a_broken_log
+    assert_log_refusal(request)
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:330: in assert_log_refusal
+    assert result["status"] == "refused", result
+E   AssertionError: {'status': 'approval_requested', 'mailbox': 'info@example.org', 'approval_id': '9b96c3cf72f721af', 'to': 'friend@example.net', ...}
+E   assert 'approval_requested' == 'refused'
+E     
+E     - refused
+E     + approval_requested
+------------------------------ Captured log call -------------------------------
+ERROR    mail_mcp.tools:tools.py:124 Send refused: sent_log.json cannot be read, so the send limit cannot be checked
+_________ test_an_approval_request_does_not_replace_an_unreadable_log __________
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:375: in test_an_approval_request_does_not_replace_an_unreadable_log
+    assert_log_refusal(await harness.call("mail_request_approval", to=ALLOWLISTED, subject=SUBJECT, body=BODY))
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:330: in assert_log_refusal
+    assert result["status"] == "refused", result
+E   AssertionError: {'status': 'approval_requested', 'mailbox': 'info@example.org', 'approval_id': '06a2a9291f440a12', 'to': 'friend@example.net', ...}
+E   assert 'approval_requested' == 'refused'
+E     
+E     - refused
+E     + approval_requested
+------------------------------ Captured log call -------------------------------
+ERROR    mail_mcp.tools:tools.py:124 Send refused: sent_log.json cannot be read, so the send limit cannot be checked
+_ test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept[{corrupt] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:393: in test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept
+    assert_log_refusal(await harness.send(pending))
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:330: in assert_log_refusal
+    assert result["status"] == "refused", result
+E   AssertionError: {'status': 'sent', 'mailbox': 'info@example.org', 'to': 'client@example.net', 'subject': 'Nabídka'}
+E   assert 'sent' == 'refused'
+E     
+E     - refused
+E     + sent
+_ test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept[{not json] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:393: in test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept
+    assert_log_refusal(await harness.send(pending))
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:330: in assert_log_refusal
+    assert result["status"] == "refused", result
+E   AssertionError: {'status': 'sent', 'mailbox': 'info@example.org', 'to': 'client@example.net', 'subject': 'Nabídka'}
+E   assert 'sent' == 'refused'
+E     
+E     - refused
+E     + sent
+_ test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept[{"sent": "x"}] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:393: in test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept
+    assert_log_refusal(await harness.send(pending))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:469: in send
+    return await self.call("mail_send_approved", **arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:442: in call
+    result = await client.call_tool(name, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:311: in call_tool
+    return await self._parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:200: in _parse_call_tool_result
+    return await _parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:425: in _parse_call_tool_result
+    raise ToolError(msg)
+E   fastmcp.exceptions.ToolError: Error calling tool 'mail_send_approved': 'str' object has no attribute 'extend'
+----------------------------- Captured stderr call -----------------------------
+                    Error calling tool 'mail_send_approved'                     
+                    ╭─────────── Traceback (most recent call last) ────────────╮
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/server/server.py:1390 in call_tool       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/tools/base.py:421 in _run                │
+                    │                                                          │
+                    │                 ... 6 frames hidden ...                  │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:256 in     │
+                    │ record                                                   │
+                    │                                                          │
+                    │   253 │   │   if kind not in NOT_SENT_KINDS:             │
+                    │   254 │   │   │   # One id per mail and its recipient co │
+                    │       count.                                             │
+                    │   255 │   │   │   extra = {"send_id": secrets.token_hex( │
+                    │       len(cc or [])}                                     │
+                    │ ❱ 256 │   │   self._append(                              │
+                    │   257 │   │   │   {"to": extract_address(recipient), "su │
+                    │       "kind": kind, **extra}                             │
+                    │   258 │   │   │   for recipient in recipients            │
+                    │   259 │   │   )                                          │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:270 in     │
+                    │ _append                                                  │
+                    │                                                          │
+                    │   267 │                                                  │
+                    │   268 │   def _append(self, new) -> None:                │
+                    │   269 │   │   entries = self._read()                     │
+                    │ ❱ 270 │   │   entries.extend(new)                        │
+                    │   271 │   │   self._path.parent.mkdir(parents=True, exis │
+                    │   272 │   │   tmp = self._path.with_suffix(".tmp")       │
+                    │   273 │   │   tmp.write_text(json.dumps({"sent": self._c │
+                    │       ensure_ascii=False))                               │
+                    ╰──────────────────────────────────────────────────────────╯
+                    AttributeError: 'str' object has no attribute 'extend'      
+------------------------------ Captured log call -------------------------------
+ERROR    fastmcp.server.server:server.py:1421 Error calling tool 'mail_send_approved'
+Traceback (most recent call last):
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/server/server.py", line 1390, in call_tool
+    return await tool._run(arguments or {}, task_meta=task_meta)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/base.py", line 421, in _run
+    return await self.run(arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 418, in run
+    result = await self._execute(type_adapter, exec_is_async, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 465, in _execute
+    result = await result
+             ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 88, in wrapper
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 469, in mail_send_approved
+    return await approvals.send(approval_id, to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 667, in send
+    return await self._send(approval_id, to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 718, in _send
+    self._log.record([to], subject, "approved")
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 256, in record
+    self._append(
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 270, in _append
+    entries.extend(new)
+    ^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'extend'
+_ test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept[["x"]] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:393: in test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept
+    assert_log_refusal(await harness.send(pending))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:469: in send
+    return await self.call("mail_send_approved", **arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:442: in call
+    result = await client.call_tool(name, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:311: in call_tool
+    return await self._parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:200: in _parse_call_tool_result
+    return await _parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:425: in _parse_call_tool_result
+    raise ToolError(msg)
+E   fastmcp.exceptions.ToolError: Error calling tool 'mail_send_approved': 'list' object has no attribute 'get'
+----------------------------- Captured stderr call -----------------------------
+[11/17/26 09:25:13] Error calling tool 'mail_send_approved'                     
+                    ╭─────────── Traceback (most recent call last) ────────────╮
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/server/server.py:1390 in call_tool       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/tools/base.py:421 in _run                │
+                    │                                                          │
+                    │                 ... 7 frames hidden ...                  │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:269 in     │
+                    │ _append                                                  │
+                    │                                                          │
+                    │   266 │   │   )                                          │
+                    │   267 │                                                  │
+                    │   268 │   def _append(self, new) -> None:                │
+                    │ ❱ 269 │   │   entries = self._read()                     │
+                    │   270 │   │   entries.extend(new)                        │
+                    │   271 │   │   self._path.parent.mkdir(parents=True, exis │
+                    │   272 │   │   tmp = self._path.with_suffix(".tmp")       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:193 in     │
+                    │ _read                                                    │
+                    │                                                          │
+                    │   190 │                                                  │
+                    │   191 │   def _read(self) -> list[dict]:                 │
+                    │   192 │   │   try:                                       │
+                    │ ❱ 193 │   │   │   return json.loads(self._path.read_text │
+                    │   194 │   │   except (OSError, ValueError):              │
+                    │   195 │   │   │   return []                              │
+                    │   196                                                    │
+                    ╰──────────────────────────────────────────────────────────╯
+                    AttributeError: 'list' object has no attribute 'get'        
+------------------------------ Captured log call -------------------------------
+ERROR    fastmcp.server.server:server.py:1421 Error calling tool 'mail_send_approved'
+Traceback (most recent call last):
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/server/server.py", line 1390, in call_tool
+    return await tool._run(arguments or {}, task_meta=task_meta)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/base.py", line 421, in _run
+    return await self.run(arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 418, in run
+    result = await self._execute(type_adapter, exec_is_async, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 465, in _execute
+    result = await result
+             ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 88, in wrapper
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 469, in mail_send_approved
+    return await approvals.send(approval_id, to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 667, in send
+    return await self._send(approval_id, to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 718, in _send
+    self._log.record([to], subject, "approved")
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 256, in record
+    self._append(
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 269, in _append
+    entries = self._read()
+              ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 193, in _read
+    return json.loads(self._path.read_text()).get("sent", [])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'
+_ test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept[{"sent": [1]}] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:393: in test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept
+    assert_log_refusal(await harness.send(pending))
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:330: in assert_log_refusal
+    assert result["status"] == "refused", result
+E   AssertionError: {'status': 'sent', 'mailbox': 'info@example.org', 'to': 'client@example.net', 'subject': 'Nabídka'}
+E   assert 'sent' == 'refused'
+E     
+E     - refused
+E     + sent
+_ test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept[{"sent": [{"sent_at": 1}]}] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:393: in test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept
+    assert_log_refusal(await harness.send(pending))
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:330: in assert_log_refusal
+    assert result["status"] == "refused", result
+E   AssertionError: {'status': 'sent', 'mailbox': 'info@example.org', 'to': 'client@example.net', 'subject': 'Nabídka'}
+E   assert 'sent' == 'refused'
+E     
+E     - refused
+E     + sent
+_ test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval[{corrupt] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:410: in test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval
+    assert_log_refusal(await harness.send(pending, body="Something else"))
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:331: in assert_log_refusal
+    assert result["error"] == "sent_log_unreadable"
+           ^^^^^^^^^^^^^^^
+E   KeyError: 'error'
+_ test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval[{not json] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:410: in test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval
+    assert_log_refusal(await harness.send(pending, body="Something else"))
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:331: in assert_log_refusal
+    assert result["error"] == "sent_log_unreadable"
+           ^^^^^^^^^^^^^^^
+E   KeyError: 'error'
+_ test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval[{"sent": "x"}] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:410: in test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval
+    assert_log_refusal(await harness.send(pending, body="Something else"))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:469: in send
+    return await self.call("mail_send_approved", **arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:442: in call
+    result = await client.call_tool(name, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:311: in call_tool
+    return await self._parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:200: in _parse_call_tool_result
+    return await _parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:425: in _parse_call_tool_result
+    raise ToolError(msg)
+E   fastmcp.exceptions.ToolError: Error calling tool 'mail_send_approved': 'str' object has no attribute 'extend'
+----------------------------- Captured stderr call -----------------------------
+                    Error calling tool 'mail_send_approved'                     
+                    ╭─────────── Traceback (most recent call last) ────────────╮
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/server/server.py:1390 in call_tool       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/tools/base.py:421 in _run                │
+                    │                                                          │
+                    │                 ... 6 frames hidden ...                  │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:256 in     │
+                    │ record                                                   │
+                    │                                                          │
+                    │   253 │   │   if kind not in NOT_SENT_KINDS:             │
+                    │   254 │   │   │   # One id per mail and its recipient co │
+                    │       count.                                             │
+                    │   255 │   │   │   extra = {"send_id": secrets.token_hex( │
+                    │       len(cc or [])}                                     │
+                    │ ❱ 256 │   │   self._append(                              │
+                    │   257 │   │   │   {"to": extract_address(recipient), "su │
+                    │       "kind": kind, **extra}                             │
+                    │   258 │   │   │   for recipient in recipients            │
+                    │   259 │   │   )                                          │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:270 in     │
+                    │ _append                                                  │
+                    │                                                          │
+                    │   267 │                                                  │
+                    │   268 │   def _append(self, new) -> None:                │
+                    │   269 │   │   entries = self._read()                     │
+                    │ ❱ 270 │   │   entries.extend(new)                        │
+                    │   271 │   │   self._path.parent.mkdir(parents=True, exis │
+                    │   272 │   │   tmp = self._path.with_suffix(".tmp")       │
+                    │   273 │   │   tmp.write_text(json.dumps({"sent": self._c │
+                    │       ensure_ascii=False))                               │
+                    ╰──────────────────────────────────────────────────────────╯
+                    AttributeError: 'str' object has no attribute 'extend'      
+------------------------------ Captured log call -------------------------------
+ERROR    fastmcp.server.server:server.py:1421 Error calling tool 'mail_send_approved'
+Traceback (most recent call last):
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/server/server.py", line 1390, in call_tool
+    return await tool._run(arguments or {}, task_meta=task_meta)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/base.py", line 421, in _run
+    return await self.run(arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 418, in run
+    result = await self._execute(type_adapter, exec_is_async, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 465, in _execute
+    result = await result
+             ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 88, in wrapper
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 469, in mail_send_approved
+    return await approvals.send(approval_id, to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 667, in send
+    return await self._send(approval_id, to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 687, in _send
+    self._log.record([bare_recipient(to) or ""], subject[:MAX_SUBJECT_CHARS], "approval_voided")
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 256, in record
+    self._append(
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 270, in _append
+    entries.extend(new)
+    ^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'extend'
+_ test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval[["x"]] __
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:410: in test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval
+    assert_log_refusal(await harness.send(pending, body="Something else"))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:469: in send
+    return await self.call("mail_send_approved", **arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:442: in call
+    result = await client.call_tool(name, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:311: in call_tool
+    return await self._parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:200: in _parse_call_tool_result
+    return await _parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:425: in _parse_call_tool_result
+    raise ToolError(msg)
+E   fastmcp.exceptions.ToolError: Error calling tool 'mail_send_approved': 'list' object has no attribute 'get'
+----------------------------- Captured stderr call -----------------------------
+                    Error calling tool 'mail_send_approved'                     
+                    ╭─────────── Traceback (most recent call last) ────────────╮
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/server/server.py:1390 in call_tool       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/tools/base.py:421 in _run                │
+                    │                                                          │
+                    │                 ... 7 frames hidden ...                  │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:269 in     │
+                    │ _append                                                  │
+                    │                                                          │
+                    │   266 │   │   )                                          │
+                    │   267 │                                                  │
+                    │   268 │   def _append(self, new) -> None:                │
+                    │ ❱ 269 │   │   entries = self._read()                     │
+                    │   270 │   │   entries.extend(new)                        │
+                    │   271 │   │   self._path.parent.mkdir(parents=True, exis │
+                    │   272 │   │   tmp = self._path.with_suffix(".tmp")       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:193 in     │
+                    │ _read                                                    │
+                    │                                                          │
+                    │   190 │                                                  │
+                    │   191 │   def _read(self) -> list[dict]:                 │
+                    │   192 │   │   try:                                       │
+                    │ ❱ 193 │   │   │   return json.loads(self._path.read_text │
+                    │   194 │   │   except (OSError, ValueError):              │
+                    │   195 │   │   │   return []                              │
+                    │   196                                                    │
+                    ╰──────────────────────────────────────────────────────────╯
+                    AttributeError: 'list' object has no attribute 'get'        
+------------------------------ Captured log call -------------------------------
+ERROR    fastmcp.server.server:server.py:1421 Error calling tool 'mail_send_approved'
+Traceback (most recent call last):
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/server/server.py", line 1390, in call_tool
+    return await tool._run(arguments or {}, task_meta=task_meta)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/base.py", line 421, in _run
+    return await self.run(arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 418, in run
+    result = await self._execute(type_adapter, exec_is_async, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 465, in _execute
+    result = await result
+             ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 88, in wrapper
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 469, in mail_send_approved
+    return await approvals.send(approval_id, to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 667, in send
+    return await self._send(approval_id, to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 687, in _send
+    self._log.record([bare_recipient(to) or ""], subject[:MAX_SUBJECT_CHARS], "approval_voided")
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 256, in record
+    self._append(
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 269, in _append
+    entries = self._read()
+              ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 193, in _read
+    return json.loads(self._path.read_text()).get("sent", [])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'
+_ test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval[{"sent": [1]}] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:410: in test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval
+    assert_log_refusal(await harness.send(pending, body="Something else"))
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:331: in assert_log_refusal
+    assert result["error"] == "sent_log_unreadable"
+           ^^^^^^^^^^^^^^^
+E   KeyError: 'error'
+_ test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval[{"sent": [{"sent_at": 1}]}] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:410: in test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval
+    assert_log_refusal(await harness.send(pending, body="Something else"))
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:331: in assert_log_refusal
+    assert result["error"] == "sent_log_unreadable"
+           ^^^^^^^^^^^^^^^
+E   KeyError: 'error'
+_ test_repeat_guard_on_a_malformed_log_refuses_cleanly_with_a_limit[{"sent": "x"}] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:432: in test_repeat_guard_on_a_malformed_log_refuses_cleanly_with_a_limit
+    assert_log_refusal(await send(harness))
+                       ^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:31: in send
+    return await harness.call("mail_send", to=list(to), subject=subject, body=BODY, cc=cc, confirm=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:442: in call
+    result = await client.call_tool(name, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:311: in call_tool
+    return await self._parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:200: in _parse_call_tool_result
+    return await _parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:425: in _parse_call_tool_result
+    raise ToolError(msg)
+E   fastmcp.exceptions.ToolError: Error calling tool 'mail_send': 'str' object has no attribute 'get'
+----------------------------- Captured stderr call -----------------------------
+                    Error calling tool 'mail_send'                              
+                    ╭─────────── Traceback (most recent call last) ────────────╮
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/server/server.py:1390 in call_tool       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/tools/base.py:421 in _run                │
+                    │                                                          │
+                    │                 ... 4 frames hidden ...                  │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py:374 in     │
+                    │ _deliver                                                 │
+                    │                                                          │
+                    │   371 │   │   │   │   "Show the user what you intend to  │
+                    │   372 │   │   │   )                                      │
+                    │   373 │   │                                              │
+                    │ ❱ 374 │   │   when = sent_log.recently_sent_to(to)       │
+                    │   375 │   │   if when:                                   │
+                    │   376 │   │   │   return refused(                        │
+                    │   377 │   │   │   │   f"This mailbox already wrote to on │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:221 in     │
+                    │ recently_sent_to                                         │
+                    │                                                          │
+                    │   218 │   │   cutoff = (datetime.now() - timedelta(minut │
+                    │   219 │   │   targets = {extract_address(r) for r in rec │
+                    │   220 │   │   for entry in self._read():                 │
+                    │ ❱ 221 │   │   │   if entry.get("sent_at", "") < cutoff o │
+                    │   222 │   │   │   │   continue                           │
+                    │   223 │   │   │   if extract_address(entry.get("to", "") │
+                    │   224 │   │   │   │   return entry.get("sent_at", "")    │
+                    ╰──────────────────────────────────────────────────────────╯
+                    AttributeError: 'str' object has no attribute 'get'         
+------------------------------ Captured log call -------------------------------
+ERROR    fastmcp.server.server:server.py:1421 Error calling tool 'mail_send'
+Traceback (most recent call last):
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/server/server.py", line 1390, in call_tool
+    return await tool._run(arguments or {}, task_meta=task_meta)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/base.py", line 421, in _run
+    return await self.run(arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 418, in run
+    result = await self._execute(type_adapter, exec_is_async, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 465, in _execute
+    result = await result
+             ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 88, in wrapper
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 410, in mail_send
+    return await _deliver(to, subject, body, cc, confirm, "send")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 374, in _deliver
+    when = sent_log.recently_sent_to(to)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 221, in recently_sent_to
+    if entry.get("sent_at", "") < cutoff or entry.get("kind") in NOT_SENT_KINDS:
+       ^^^^^^^^^
+AttributeError: 'str' object has no attribute 'get'
+___ test_repeat_guard_on_a_malformed_log_refuses_cleanly_with_a_limit[["x"]] ___
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:432: in test_repeat_guard_on_a_malformed_log_refuses_cleanly_with_a_limit
+    assert_log_refusal(await send(harness))
+                       ^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:31: in send
+    return await harness.call("mail_send", to=list(to), subject=subject, body=BODY, cc=cc, confirm=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:442: in call
+    result = await client.call_tool(name, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:311: in call_tool
+    return await self._parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:200: in _parse_call_tool_result
+    return await _parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:425: in _parse_call_tool_result
+    raise ToolError(msg)
+E   fastmcp.exceptions.ToolError: Error calling tool 'mail_send': 'list' object has no attribute 'get'
+----------------------------- Captured stderr call -----------------------------
+                    Error calling tool 'mail_send'                              
+                    ╭─────────── Traceback (most recent call last) ────────────╮
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/server/server.py:1390 in call_tool       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/tools/base.py:421 in _run                │
+                    │                                                          │
+                    │                 ... 5 frames hidden ...                  │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:220 in     │
+                    │ recently_sent_to                                         │
+                    │                                                          │
+                    │   217 │   │   │   return None                            │
+                    │   218 │   │   cutoff = (datetime.now() - timedelta(minut │
+                    │   219 │   │   targets = {extract_address(r) for r in rec │
+                    │ ❱ 220 │   │   for entry in self._read():                 │
+                    │   221 │   │   │   if entry.get("sent_at", "") < cutoff o │
+                    │   222 │   │   │   │   continue                           │
+                    │   223 │   │   │   if extract_address(entry.get("to", "") │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:193 in     │
+                    │ _read                                                    │
+                    │                                                          │
+                    │   190 │                                                  │
+                    │   191 │   def _read(self) -> list[dict]:                 │
+                    │   192 │   │   try:                                       │
+                    │ ❱ 193 │   │   │   return json.loads(self._path.read_text │
+                    │   194 │   │   except (OSError, ValueError):              │
+                    │   195 │   │   │   return []                              │
+                    │   196                                                    │
+                    ╰──────────────────────────────────────────────────────────╯
+                    AttributeError: 'list' object has no attribute 'get'        
+------------------------------ Captured log call -------------------------------
+ERROR    fastmcp.server.server:server.py:1421 Error calling tool 'mail_send'
+Traceback (most recent call last):
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/server/server.py", line 1390, in call_tool
+    return await tool._run(arguments or {}, task_meta=task_meta)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/base.py", line 421, in _run
+    return await self.run(arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 418, in run
+    result = await self._execute(type_adapter, exec_is_async, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 465, in _execute
+    result = await result
+             ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 88, in wrapper
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 410, in mail_send
+    return await _deliver(to, subject, body, cc, confirm, "send")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 374, in _deliver
+    when = sent_log.recently_sent_to(to)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 220, in recently_sent_to
+    for entry in self._read():
+                 ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 193, in _read
+    return json.loads(self._path.read_text()).get("sent", [])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'
+_ test_repeat_guard_on_a_malformed_log_refuses_cleanly_with_a_limit[{"sent": [1]}] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:432: in test_repeat_guard_on_a_malformed_log_refuses_cleanly_with_a_limit
+    assert_log_refusal(await send(harness))
+                       ^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:31: in send
+    return await harness.call("mail_send", to=list(to), subject=subject, body=BODY, cc=cc, confirm=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:442: in call
+    result = await client.call_tool(name, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:311: in call_tool
+    return await self._parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:200: in _parse_call_tool_result
+    return await _parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:425: in _parse_call_tool_result
+    raise ToolError(msg)
+E   fastmcp.exceptions.ToolError: Error calling tool 'mail_send': 'int' object has no attribute 'get'
+----------------------------- Captured stderr call -----------------------------
+                    Error calling tool 'mail_send'                              
+                    ╭─────────── Traceback (most recent call last) ────────────╮
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/server/server.py:1390 in call_tool       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/tools/base.py:421 in _run                │
+                    │                                                          │
+                    │                 ... 4 frames hidden ...                  │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py:374 in     │
+                    │ _deliver                                                 │
+                    │                                                          │
+                    │   371 │   │   │   │   "Show the user what you intend to  │
+                    │   372 │   │   │   )                                      │
+                    │   373 │   │                                              │
+                    │ ❱ 374 │   │   when = sent_log.recently_sent_to(to)       │
+                    │   375 │   │   if when:                                   │
+                    │   376 │   │   │   return refused(                        │
+                    │   377 │   │   │   │   f"This mailbox already wrote to on │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:221 in     │
+                    │ recently_sent_to                                         │
+                    │                                                          │
+                    │   218 │   │   cutoff = (datetime.now() - timedelta(minut │
+                    │   219 │   │   targets = {extract_address(r) for r in rec │
+                    │   220 │   │   for entry in self._read():                 │
+                    │ ❱ 221 │   │   │   if entry.get("sent_at", "") < cutoff o │
+                    │   222 │   │   │   │   continue                           │
+                    │   223 │   │   │   if extract_address(entry.get("to", "") │
+                    │   224 │   │   │   │   return entry.get("sent_at", "")    │
+                    ╰──────────────────────────────────────────────────────────╯
+                    AttributeError: 'int' object has no attribute 'get'         
+------------------------------ Captured log call -------------------------------
+ERROR    fastmcp.server.server:server.py:1421 Error calling tool 'mail_send'
+Traceback (most recent call last):
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/server/server.py", line 1390, in call_tool
+    return await tool._run(arguments or {}, task_meta=task_meta)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/base.py", line 421, in _run
+    return await self.run(arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 418, in run
+    result = await self._execute(type_adapter, exec_is_async, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 465, in _execute
+    result = await result
+             ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 88, in wrapper
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 410, in mail_send
+    return await _deliver(to, subject, body, cc, confirm, "send")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 374, in _deliver
+    when = sent_log.recently_sent_to(to)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 221, in recently_sent_to
+    if entry.get("sent_at", "") < cutoff or entry.get("kind") in NOT_SENT_KINDS:
+       ^^^^^^^^^
+AttributeError: 'int' object has no attribute 'get'
+_ test_repeat_guard_on_a_malformed_log_refuses_cleanly_with_a_limit[{"sent": [{"sent_at": 1}]}] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:432: in test_repeat_guard_on_a_malformed_log_refuses_cleanly_with_a_limit
+    assert_log_refusal(await send(harness))
+                       ^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:31: in send
+    return await harness.call("mail_send", to=list(to), subject=subject, body=BODY, cc=cc, confirm=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:442: in call
+    result = await client.call_tool(name, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:311: in call_tool
+    return await self._parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:200: in _parse_call_tool_result
+    return await _parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:425: in _parse_call_tool_result
+    raise ToolError(msg)
+E   fastmcp.exceptions.ToolError: Error calling tool 'mail_send': '<' not supported between instances of 'int' and 'str'
+----------------------------- Captured stderr call -----------------------------
+                    Error calling tool 'mail_send'                              
+                    ╭─────────── Traceback (most recent call last) ────────────╮
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/server/server.py:1390 in call_tool       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/tools/base.py:421 in _run                │
+                    │                                                          │
+                    │                 ... 4 frames hidden ...                  │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py:374 in     │
+                    │ _deliver                                                 │
+                    │                                                          │
+                    │   371 │   │   │   │   "Show the user what you intend to  │
+                    │   372 │   │   │   )                                      │
+                    │   373 │   │                                              │
+                    │ ❱ 374 │   │   when = sent_log.recently_sent_to(to)       │
+                    │   375 │   │   if when:                                   │
+                    │   376 │   │   │   return refused(                        │
+                    │   377 │   │   │   │   f"This mailbox already wrote to on │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:221 in     │
+                    │ recently_sent_to                                         │
+                    │                                                          │
+                    │   218 │   │   cutoff = (datetime.now() - timedelta(minut │
+                    │   219 │   │   targets = {extract_address(r) for r in rec │
+                    │   220 │   │   for entry in self._read():                 │
+                    │ ❱ 221 │   │   │   if entry.get("sent_at", "") < cutoff o │
+                    │   222 │   │   │   │   continue                           │
+                    │   223 │   │   │   if extract_address(entry.get("to", "") │
+                    │   224 │   │   │   │   return entry.get("sent_at", "")    │
+                    ╰──────────────────────────────────────────────────────────╯
+                    TypeError: '<' not supported between instances of 'int' and 
+                    'str'                                                       
+------------------------------ Captured log call -------------------------------
+ERROR    fastmcp.server.server:server.py:1421 Error calling tool 'mail_send'
+Traceback (most recent call last):
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/server/server.py", line 1390, in call_tool
+    return await tool._run(arguments or {}, task_meta=task_meta)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/base.py", line 421, in _run
+    return await self.run(arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 418, in run
+    result = await self._execute(type_adapter, exec_is_async, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 465, in _execute
+    result = await result
+             ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 88, in wrapper
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 410, in mail_send
+    return await _deliver(to, subject, body, cc, confirm, "send")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 374, in _deliver
+    when = sent_log.recently_sent_to(to)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 221, in recently_sent_to
+    if entry.get("sent_at", "") < cutoff or entry.get("kind") in NOT_SENT_KINDS:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: '<' not supported between instances of 'int' and 'str'
+_ test_repeat_guard_on_a_malformed_log_without_a_limit_sends_as_before[{"sent": "x"}] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:443: in test_repeat_guard_on_a_malformed_log_without_a_limit_sends_as_before
+    assert (await send(harness))["status"] == "sent"
+            ^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:31: in send
+    return await harness.call("mail_send", to=list(to), subject=subject, body=BODY, cc=cc, confirm=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:442: in call
+    result = await client.call_tool(name, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:311: in call_tool
+    return await self._parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:200: in _parse_call_tool_result
+    return await _parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:425: in _parse_call_tool_result
+    raise ToolError(msg)
+E   fastmcp.exceptions.ToolError: Error calling tool 'mail_send': 'str' object has no attribute 'get'
+----------------------------- Captured stderr call -----------------------------
+                    Error calling tool 'mail_send'                              
+                    ╭─────────── Traceback (most recent call last) ────────────╮
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/server/server.py:1390 in call_tool       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/tools/base.py:421 in _run                │
+                    │                                                          │
+                    │                 ... 4 frames hidden ...                  │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py:374 in     │
+                    │ _deliver                                                 │
+                    │                                                          │
+                    │   371 │   │   │   │   "Show the user what you intend to  │
+                    │   372 │   │   │   )                                      │
+                    │   373 │   │                                              │
+                    │ ❱ 374 │   │   when = sent_log.recently_sent_to(to)       │
+                    │   375 │   │   if when:                                   │
+                    │   376 │   │   │   return refused(                        │
+                    │   377 │   │   │   │   f"This mailbox already wrote to on │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:221 in     │
+                    │ recently_sent_to                                         │
+                    │                                                          │
+                    │   218 │   │   cutoff = (datetime.now() - timedelta(minut │
+                    │   219 │   │   targets = {extract_address(r) for r in rec │
+                    │   220 │   │   for entry in self._read():                 │
+                    │ ❱ 221 │   │   │   if entry.get("sent_at", "") < cutoff o │
+                    │   222 │   │   │   │   continue                           │
+                    │   223 │   │   │   if extract_address(entry.get("to", "") │
+                    │   224 │   │   │   │   return entry.get("sent_at", "")    │
+                    ╰──────────────────────────────────────────────────────────╯
+                    AttributeError: 'str' object has no attribute 'get'         
+------------------------------ Captured log call -------------------------------
+ERROR    fastmcp.server.server:server.py:1421 Error calling tool 'mail_send'
+Traceback (most recent call last):
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/server/server.py", line 1390, in call_tool
+    return await tool._run(arguments or {}, task_meta=task_meta)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/base.py", line 421, in _run
+    return await self.run(arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 418, in run
+    result = await self._execute(type_adapter, exec_is_async, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 465, in _execute
+    result = await result
+             ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 88, in wrapper
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 410, in mail_send
+    return await _deliver(to, subject, body, cc, confirm, "send")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 374, in _deliver
+    when = sent_log.recently_sent_to(to)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 221, in recently_sent_to
+    if entry.get("sent_at", "") < cutoff or entry.get("kind") in NOT_SENT_KINDS:
+       ^^^^^^^^^
+AttributeError: 'str' object has no attribute 'get'
+_ test_repeat_guard_on_a_malformed_log_without_a_limit_sends_as_before[["x"]] __
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:443: in test_repeat_guard_on_a_malformed_log_without_a_limit_sends_as_before
+    assert (await send(harness))["status"] == "sent"
+            ^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:31: in send
+    return await harness.call("mail_send", to=list(to), subject=subject, body=BODY, cc=cc, confirm=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:442: in call
+    result = await client.call_tool(name, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:311: in call_tool
+    return await self._parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:200: in _parse_call_tool_result
+    return await _parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:425: in _parse_call_tool_result
+    raise ToolError(msg)
+E   fastmcp.exceptions.ToolError: Error calling tool 'mail_send': 'list' object has no attribute 'get'
+----------------------------- Captured stderr call -----------------------------
+                    Error calling tool 'mail_send'                              
+                    ╭─────────── Traceback (most recent call last) ────────────╮
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/server/server.py:1390 in call_tool       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/tools/base.py:421 in _run                │
+                    │                                                          │
+                    │                 ... 5 frames hidden ...                  │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:220 in     │
+                    │ recently_sent_to                                         │
+                    │                                                          │
+                    │   217 │   │   │   return None                            │
+                    │   218 │   │   cutoff = (datetime.now() - timedelta(minut │
+                    │   219 │   │   targets = {extract_address(r) for r in rec │
+                    │ ❱ 220 │   │   for entry in self._read():                 │
+                    │   221 │   │   │   if entry.get("sent_at", "") < cutoff o │
+                    │   222 │   │   │   │   continue                           │
+                    │   223 │   │   │   if extract_address(entry.get("to", "") │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:193 in     │
+                    │ _read                                                    │
+                    │                                                          │
+                    │   190 │                                                  │
+                    │   191 │   def _read(self) -> list[dict]:                 │
+                    │   192 │   │   try:                                       │
+                    │ ❱ 193 │   │   │   return json.loads(self._path.read_text │
+                    │   194 │   │   except (OSError, ValueError):              │
+                    │   195 │   │   │   return []                              │
+                    │   196                                                    │
+                    ╰──────────────────────────────────────────────────────────╯
+                    AttributeError: 'list' object has no attribute 'get'        
+------------------------------ Captured log call -------------------------------
+ERROR    fastmcp.server.server:server.py:1421 Error calling tool 'mail_send'
+Traceback (most recent call last):
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/server/server.py", line 1390, in call_tool
+    return await tool._run(arguments or {}, task_meta=task_meta)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/base.py", line 421, in _run
+    return await self.run(arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 418, in run
+    result = await self._execute(type_adapter, exec_is_async, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 465, in _execute
+    result = await result
+             ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 88, in wrapper
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 410, in mail_send
+    return await _deliver(to, subject, body, cc, confirm, "send")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 374, in _deliver
+    when = sent_log.recently_sent_to(to)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 220, in recently_sent_to
+    for entry in self._read():
+                 ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 193, in _read
+    return json.loads(self._path.read_text()).get("sent", [])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'
+_ test_repeat_guard_on_a_malformed_log_without_a_limit_sends_as_before[{"sent": [1]}] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:443: in test_repeat_guard_on_a_malformed_log_without_a_limit_sends_as_before
+    assert (await send(harness))["status"] == "sent"
+            ^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:31: in send
+    return await harness.call("mail_send", to=list(to), subject=subject, body=BODY, cc=cc, confirm=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:442: in call
+    result = await client.call_tool(name, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:311: in call_tool
+    return await self._parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:200: in _parse_call_tool_result
+    return await _parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:425: in _parse_call_tool_result
+    raise ToolError(msg)
+E   fastmcp.exceptions.ToolError: Error calling tool 'mail_send': 'int' object has no attribute 'get'
+----------------------------- Captured stderr call -----------------------------
+[11/17/26 09:25:14] Error calling tool 'mail_send'                              
+                    ╭─────────── Traceback (most recent call last) ────────────╮
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/server/server.py:1390 in call_tool       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/tools/base.py:421 in _run                │
+                    │                                                          │
+                    │                 ... 4 frames hidden ...                  │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py:374 in     │
+                    │ _deliver                                                 │
+                    │                                                          │
+                    │   371 │   │   │   │   "Show the user what you intend to  │
+                    │   372 │   │   │   )                                      │
+                    │   373 │   │                                              │
+                    │ ❱ 374 │   │   when = sent_log.recently_sent_to(to)       │
+                    │   375 │   │   if when:                                   │
+                    │   376 │   │   │   return refused(                        │
+                    │   377 │   │   │   │   f"This mailbox already wrote to on │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:221 in     │
+                    │ recently_sent_to                                         │
+                    │                                                          │
+                    │   218 │   │   cutoff = (datetime.now() - timedelta(minut │
+                    │   219 │   │   targets = {extract_address(r) for r in rec │
+                    │   220 │   │   for entry in self._read():                 │
+                    │ ❱ 221 │   │   │   if entry.get("sent_at", "") < cutoff o │
+                    │   222 │   │   │   │   continue                           │
+                    │   223 │   │   │   if extract_address(entry.get("to", "") │
+                    │   224 │   │   │   │   return entry.get("sent_at", "")    │
+                    ╰──────────────────────────────────────────────────────────╯
+                    AttributeError: 'int' object has no attribute 'get'         
+------------------------------ Captured log call -------------------------------
+ERROR    fastmcp.server.server:server.py:1421 Error calling tool 'mail_send'
+Traceback (most recent call last):
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/server/server.py", line 1390, in call_tool
+    return await tool._run(arguments or {}, task_meta=task_meta)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/base.py", line 421, in _run
+    return await self.run(arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 418, in run
+    result = await self._execute(type_adapter, exec_is_async, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 465, in _execute
+    result = await result
+             ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 88, in wrapper
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 410, in mail_send
+    return await _deliver(to, subject, body, cc, confirm, "send")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 374, in _deliver
+    when = sent_log.recently_sent_to(to)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 221, in recently_sent_to
+    if entry.get("sent_at", "") < cutoff or entry.get("kind") in NOT_SENT_KINDS:
+       ^^^^^^^^^
+AttributeError: 'int' object has no attribute 'get'
+_ test_repeat_guard_on_a_malformed_log_without_a_limit_sends_as_before[{"sent": [{"sent_at": 1}]}] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:443: in test_repeat_guard_on_a_malformed_log_without_a_limit_sends_as_before
+    assert (await send(harness))["status"] == "sent"
+            ^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:31: in send
+    return await harness.call("mail_send", to=list(to), subject=subject, body=BODY, cc=cc, confirm=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:442: in call
+    result = await client.call_tool(name, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:311: in call_tool
+    return await self._parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:200: in _parse_call_tool_result
+    return await _parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:425: in _parse_call_tool_result
+    raise ToolError(msg)
+E   fastmcp.exceptions.ToolError: Error calling tool 'mail_send': '<' not supported between instances of 'int' and 'str'
+----------------------------- Captured stderr call -----------------------------
+                    Error calling tool 'mail_send'                              
+                    ╭─────────── Traceback (most recent call last) ────────────╮
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/server/server.py:1390 in call_tool       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/tools/base.py:421 in _run                │
+                    │                                                          │
+                    │                 ... 4 frames hidden ...                  │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py:374 in     │
+                    │ _deliver                                                 │
+                    │                                                          │
+                    │   371 │   │   │   │   "Show the user what you intend to  │
+                    │   372 │   │   │   )                                      │
+                    │   373 │   │                                              │
+                    │ ❱ 374 │   │   when = sent_log.recently_sent_to(to)       │
+                    │   375 │   │   if when:                                   │
+                    │   376 │   │   │   return refused(                        │
+                    │   377 │   │   │   │   f"This mailbox already wrote to on │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:221 in     │
+                    │ recently_sent_to                                         │
+                    │                                                          │
+                    │   218 │   │   cutoff = (datetime.now() - timedelta(minut │
+                    │   219 │   │   targets = {extract_address(r) for r in rec │
+                    │   220 │   │   for entry in self._read():                 │
+                    │ ❱ 221 │   │   │   if entry.get("sent_at", "") < cutoff o │
+                    │   222 │   │   │   │   continue                           │
+                    │   223 │   │   │   if extract_address(entry.get("to", "") │
+                    │   224 │   │   │   │   return entry.get("sent_at", "")    │
+                    ╰──────────────────────────────────────────────────────────╯
+                    TypeError: '<' not supported between instances of 'int' and 
+                    'str'                                                       
+------------------------------ Captured log call -------------------------------
+ERROR    fastmcp.server.server:server.py:1421 Error calling tool 'mail_send'
+Traceback (most recent call last):
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/server/server.py", line 1390, in call_tool
+    return await tool._run(arguments or {}, task_meta=task_meta)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/base.py", line 421, in _run
+    return await self.run(arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 418, in run
+    result = await self._execute(type_adapter, exec_is_async, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 465, in _execute
+    result = await result
+             ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 88, in wrapper
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 410, in mail_send
+    return await _deliver(to, subject, body, cc, confirm, "send")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 374, in _deliver
+    when = sent_log.recently_sent_to(to)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 221, in recently_sent_to
+    if entry.get("sent_at", "") < cutoff or entry.get("kind") in NOT_SENT_KINDS:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: '<' not supported between instances of 'int' and 'str'
+_ test_repeat_guard_of_an_approved_send_on_a_malformed_log_without_a_limit[{"sent": "x"}] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:452: in test_repeat_guard_of_an_approved_send_on_a_malformed_log_without_a_limit
+    assert (await harness.send(pending))["status"] == "sent"
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:469: in send
+    return await self.call("mail_send_approved", **arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:442: in call
+    result = await client.call_tool(name, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:311: in call_tool
+    return await self._parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:200: in _parse_call_tool_result
+    return await _parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:425: in _parse_call_tool_result
+    raise ToolError(msg)
+E   fastmcp.exceptions.ToolError: Error calling tool 'mail_send_approved': 'str' object has no attribute 'get'
+----------------------------- Captured stderr call -----------------------------
+                    Error calling tool 'mail_send_approved'                     
+                    ╭─────────── Traceback (most recent call last) ────────────╮
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/server/server.py:1390 in call_tool       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/tools/base.py:421 in _run                │
+                    │                                                          │
+                    │                 ... 5 frames hidden ...                  │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py:704 in  │
+                    │ _send                                                    │
+                    │                                                          │
+                    │   701 │   │   │   │   "This approval's recipient is not  │
+                    │       new one."                                          │
+                    │   702 │   │   │   )                                      │
+                    │   703 │   │                                              │
+                    │ ❱ 704 │   │   when = self._log.recently_sent_to([to])    │
+                    │   705 │   │   if when:                                   │
+                    │   706 │   │   │   return self._refused(                  │
+                    │   707 │   │   │   │   f"This mailbox already wrote to th │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:221 in     │
+                    │ recently_sent_to                                         │
+                    │                                                          │
+                    │   218 │   │   cutoff = (datetime.now() - timedelta(minut │
+                    │   219 │   │   targets = {extract_address(r) for r in rec │
+                    │   220 │   │   for entry in self._read():                 │
+                    │ ❱ 221 │   │   │   if entry.get("sent_at", "") < cutoff o │
+                    │   222 │   │   │   │   continue                           │
+                    │   223 │   │   │   if extract_address(entry.get("to", "") │
+                    │   224 │   │   │   │   return entry.get("sent_at", "")    │
+                    ╰──────────────────────────────────────────────────────────╯
+                    AttributeError: 'str' object has no attribute 'get'         
+------------------------------ Captured log call -------------------------------
+ERROR    fastmcp.server.server:server.py:1421 Error calling tool 'mail_send_approved'
+Traceback (most recent call last):
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/server/server.py", line 1390, in call_tool
+    return await tool._run(arguments or {}, task_meta=task_meta)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/base.py", line 421, in _run
+    return await self.run(arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 418, in run
+    result = await self._execute(type_adapter, exec_is_async, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 465, in _execute
+    result = await result
+             ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 88, in wrapper
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 469, in mail_send_approved
+    return await approvals.send(approval_id, to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 667, in send
+    return await self._send(approval_id, to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 704, in _send
+    when = self._log.recently_sent_to([to])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 221, in recently_sent_to
+    if entry.get("sent_at", "") < cutoff or entry.get("kind") in NOT_SENT_KINDS:
+       ^^^^^^^^^
+AttributeError: 'str' object has no attribute 'get'
+_ test_repeat_guard_of_an_approved_send_on_a_malformed_log_without_a_limit[["x"]] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:452: in test_repeat_guard_of_an_approved_send_on_a_malformed_log_without_a_limit
+    assert (await harness.send(pending))["status"] == "sent"
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:469: in send
+    return await self.call("mail_send_approved", **arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:442: in call
+    result = await client.call_tool(name, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:311: in call_tool
+    return await self._parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:200: in _parse_call_tool_result
+    return await _parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:425: in _parse_call_tool_result
+    raise ToolError(msg)
+E   fastmcp.exceptions.ToolError: Error calling tool 'mail_send_approved': 'list' object has no attribute 'get'
+----------------------------- Captured stderr call -----------------------------
+                    Error calling tool 'mail_send_approved'                     
+                    ╭─────────── Traceback (most recent call last) ────────────╮
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/server/server.py:1390 in call_tool       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/tools/base.py:421 in _run                │
+                    │                                                          │
+                    │                 ... 6 frames hidden ...                  │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:220 in     │
+                    │ recently_sent_to                                         │
+                    │                                                          │
+                    │   217 │   │   │   return None                            │
+                    │   218 │   │   cutoff = (datetime.now() - timedelta(minut │
+                    │   219 │   │   targets = {extract_address(r) for r in rec │
+                    │ ❱ 220 │   │   for entry in self._read():                 │
+                    │   221 │   │   │   if entry.get("sent_at", "") < cutoff o │
+                    │   222 │   │   │   │   continue                           │
+                    │   223 │   │   │   if extract_address(entry.get("to", "") │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:193 in     │
+                    │ _read                                                    │
+                    │                                                          │
+                    │   190 │                                                  │
+                    │   191 │   def _read(self) -> list[dict]:                 │
+                    │   192 │   │   try:                                       │
+                    │ ❱ 193 │   │   │   return json.loads(self._path.read_text │
+                    │   194 │   │   except (OSError, ValueError):              │
+                    │   195 │   │   │   return []                              │
+                    │   196                                                    │
+                    ╰──────────────────────────────────────────────────────────╯
+                    AttributeError: 'list' object has no attribute 'get'        
+------------------------------ Captured log call -------------------------------
+ERROR    fastmcp.server.server:server.py:1421 Error calling tool 'mail_send_approved'
+Traceback (most recent call last):
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/server/server.py", line 1390, in call_tool
+    return await tool._run(arguments or {}, task_meta=task_meta)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/base.py", line 421, in _run
+    return await self.run(arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 418, in run
+    result = await self._execute(type_adapter, exec_is_async, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 465, in _execute
+    result = await result
+             ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 88, in wrapper
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 469, in mail_send_approved
+    return await approvals.send(approval_id, to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 667, in send
+    return await self._send(approval_id, to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 704, in _send
+    when = self._log.recently_sent_to([to])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 220, in recently_sent_to
+    for entry in self._read():
+                 ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 193, in _read
+    return json.loads(self._path.read_text()).get("sent", [])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'
+_ test_repeat_guard_of_an_approved_send_on_a_malformed_log_without_a_limit[{"sent": [1]}] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:452: in test_repeat_guard_of_an_approved_send_on_a_malformed_log_without_a_limit
+    assert (await harness.send(pending))["status"] == "sent"
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:469: in send
+    return await self.call("mail_send_approved", **arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:442: in call
+    result = await client.call_tool(name, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:311: in call_tool
+    return await self._parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:200: in _parse_call_tool_result
+    return await _parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:425: in _parse_call_tool_result
+    raise ToolError(msg)
+E   fastmcp.exceptions.ToolError: Error calling tool 'mail_send_approved': 'int' object has no attribute 'get'
+----------------------------- Captured stderr call -----------------------------
+                    Error calling tool 'mail_send_approved'                     
+                    ╭─────────── Traceback (most recent call last) ────────────╮
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/server/server.py:1390 in call_tool       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/tools/base.py:421 in _run                │
+                    │                                                          │
+                    │                 ... 5 frames hidden ...                  │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py:704 in  │
+                    │ _send                                                    │
+                    │                                                          │
+                    │   701 │   │   │   │   "This approval's recipient is not  │
+                    │       new one."                                          │
+                    │   702 │   │   │   )                                      │
+                    │   703 │   │                                              │
+                    │ ❱ 704 │   │   when = self._log.recently_sent_to([to])    │
+                    │   705 │   │   if when:                                   │
+                    │   706 │   │   │   return self._refused(                  │
+                    │   707 │   │   │   │   f"This mailbox already wrote to th │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:221 in     │
+                    │ recently_sent_to                                         │
+                    │                                                          │
+                    │   218 │   │   cutoff = (datetime.now() - timedelta(minut │
+                    │   219 │   │   targets = {extract_address(r) for r in rec │
+                    │   220 │   │   for entry in self._read():                 │
+                    │ ❱ 221 │   │   │   if entry.get("sent_at", "") < cutoff o │
+                    │   222 │   │   │   │   continue                           │
+                    │   223 │   │   │   if extract_address(entry.get("to", "") │
+                    │   224 │   │   │   │   return entry.get("sent_at", "")    │
+                    ╰──────────────────────────────────────────────────────────╯
+                    AttributeError: 'int' object has no attribute 'get'         
+------------------------------ Captured log call -------------------------------
+ERROR    fastmcp.server.server:server.py:1421 Error calling tool 'mail_send_approved'
+Traceback (most recent call last):
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/server/server.py", line 1390, in call_tool
+    return await tool._run(arguments or {}, task_meta=task_meta)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/base.py", line 421, in _run
+    return await self.run(arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 418, in run
+    result = await self._execute(type_adapter, exec_is_async, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 465, in _execute
+    result = await result
+             ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 88, in wrapper
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 469, in mail_send_approved
+    return await approvals.send(approval_id, to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 667, in send
+    return await self._send(approval_id, to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 704, in _send
+    when = self._log.recently_sent_to([to])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 221, in recently_sent_to
+    if entry.get("sent_at", "") < cutoff or entry.get("kind") in NOT_SENT_KINDS:
+       ^^^^^^^^^
+AttributeError: 'int' object has no attribute 'get'
+_ test_repeat_guard_of_an_approved_send_on_a_malformed_log_without_a_limit[{"sent": [{"sent_at": 1}]}] _
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:452: in test_repeat_guard_of_an_approved_send_on_a_malformed_log_without_a_limit
+    assert (await harness.send(pending))["status"] == "sent"
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:469: in send
+    return await self.call("mail_send_approved", **arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/support.py:442: in call
+    result = await client.call_tool(name, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:311: in call_tool
+    return await self._parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:200: in _parse_call_tool_result
+    return await _parse_call_tool_result(
+qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/client/mixins/tools.py:425: in _parse_call_tool_result
+    raise ToolError(msg)
+E   fastmcp.exceptions.ToolError: Error calling tool 'mail_send_approved': '<' not supported between instances of 'int' and 'str'
+----------------------------- Captured stderr call -----------------------------
+                    Error calling tool 'mail_send_approved'                     
+                    ╭─────────── Traceback (most recent call last) ────────────╮
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/server/server.py:1390 in call_tool       │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/qa- │
+                    │ evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-p │
+                    │ ackages/fastmcp/tools/base.py:421 in _run                │
+                    │                                                          │
+                    │                 ... 5 frames hidden ...                  │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py:704 in  │
+                    │ _send                                                    │
+                    │                                                          │
+                    │   701 │   │   │   │   "This approval's recipient is not  │
+                    │       new one."                                          │
+                    │   702 │   │   │   )                                      │
+                    │   703 │   │                                              │
+                    │ ❱ 704 │   │   when = self._log.recently_sent_to([to])    │
+                    │   705 │   │   if when:                                   │
+                    │   706 │   │   │   return self._refused(                  │
+                    │   707 │   │   │   │   f"This mailbox already wrote to th │
+                    │                                                          │
+                    │ /Users/pilarj/.dodaios/data/society/tester/workspace/rep │
+                    │ os/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py:221 in     │
+                    │ recently_sent_to                                         │
+                    │                                                          │
+                    │   218 │   │   cutoff = (datetime.now() - timedelta(minut │
+                    │   219 │   │   targets = {extract_address(r) for r in rec │
+                    │   220 │   │   for entry in self._read():                 │
+                    │ ❱ 221 │   │   │   if entry.get("sent_at", "") < cutoff o │
+                    │   222 │   │   │   │   continue                           │
+                    │   223 │   │   │   if extract_address(entry.get("to", "") │
+                    │   224 │   │   │   │   return entry.get("sent_at", "")    │
+                    ╰──────────────────────────────────────────────────────────╯
+                    TypeError: '<' not supported between instances of 'int' and 
+                    'str'                                                       
+------------------------------ Captured log call -------------------------------
+ERROR    fastmcp.server.server:server.py:1421 Error calling tool 'mail_send_approved'
+Traceback (most recent call last):
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/server/server.py", line 1390, in call_tool
+    return await tool._run(arguments or {}, task_meta=task_meta)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/base.py", line 421, in _run
+    return await self.run(arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 418, in run
+    result = await self._execute(type_adapter, exec_is_async, arguments)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 465, in _execute
+    result = await result
+             ^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/qa-evidence/mcp-mail-pr7-2492ac1/venv/lib/python3.12/site-packages/fastmcp/tools/function_tool.py", line 88, in wrapper
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/tools.py", line 469, in mail_send_approved
+    return await approvals.send(approval_id, to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 667, in send
+    return await self._send(approval_id, to, subject, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/approval.py", line 704, in _send
+    when = self._log.recently_sent_to([to])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa7-2492ac1/src/mail_mcp/guard.py", line 221, in recently_sent_to
+    if entry.get("sent_at", "") < cutoff or entry.get("kind") in NOT_SENT_KINDS:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: '<' not supported between instances of 'int' and 'str'
+___ test_mail_that_went_out_is_reported_sent_even_if_the_log_broke_meanwhile ___
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:477: in test_mail_that_went_out_is_reported_sent_even_if_the_log_broke_meanwhile
+    assert (harness.settings.data_dir / "sent_log.json").read_text() == "{corrupt"
+E   assert '{\n  "sent":...    }\n  ]\n}' == '{corrupt'
+E     
+E     - {corrupt
+E     + {
+E     +   "sent": [
+E     +     {
+E     +       "to": "friend@example.net",
+E     +       "subject": "Nabídka",...
+E     
+E     ...Full output truncated, use '-vv' to show
+__ test_an_approved_mail_that_went_out_is_reported_sent_even_if_the_log_broke __
+qa-evidence/mcp-mail-pr7-1f486ba/current-tests/tests/test_send_limits.py:490: in test_an_approved_mail_that_went_out_is_reported_sent_even_if_the_log_broke
+    assert (harness.settings.data_dir / "sent_log.json").read_text() == "{corrupt"
+E   assert '{\n  "sent":...    }\n  ]\n}' == '{corrupt'
+E     
+E     - {corrupt
+E     + {
+E     +   "sent": [
+E     +     {
+E     +       "to": "client@example.net",
+E     +       "subject": "Nabídka",...
+E     
+E     ...Full output truncated, use '-vv' to show
+=========================== short test summary info ============================
+FAILED repos/mcp-mail-qa7-1f486ba::test_an_approval_request_does_not_reset_a_broken_log[{corrupt]
+FAILED repos/mcp-mail-qa7-1f486ba::test_an_approval_request_does_not_reset_a_broken_log[{not json]
+FAILED repos/mcp-mail-qa7-1f486ba::test_an_approval_request_does_not_reset_a_broken_log[{"sent": "x"}]
+FAILED repos/mcp-mail-qa7-1f486ba::test_an_approval_request_does_not_reset_a_broken_log[["x"]]
+FAILED repos/mcp-mail-qa7-1f486ba::test_an_approval_request_does_not_reset_a_broken_log[{"sent": [1]}]
+FAILED repos/mcp-mail-qa7-1f486ba::test_an_approval_request_does_not_reset_a_broken_log[{"sent": [{"sent_at": 1}]}]
+FAILED repos/mcp-mail-qa7-1f486ba::test_an_approval_request_does_not_replace_an_unreadable_log
+FAILED repos/mcp-mail-qa7-1f486ba::test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept[{corrupt]
+FAILED repos/mcp-mail-qa7-1f486ba::test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept[{not json]
+FAILED repos/mcp-mail-qa7-1f486ba::test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept[{"sent": "x"}]
+FAILED repos/mcp-mail-qa7-1f486ba::test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept[["x"]]
+FAILED repos/mcp-mail-qa7-1f486ba::test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept[{"sent": [1]}]
+FAILED repos/mcp-mail-qa7-1f486ba::test_an_approved_send_is_refused_on_a_broken_log_and_the_approval_kept[{"sent": [{"sent_at": 1}]}]
+FAILED repos/mcp-mail-qa7-1f486ba::test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval[{corrupt]
+FAILED repos/mcp-mail-qa7-1f486ba::test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval[{not json]
+FAILED repos/mcp-mail-qa7-1f486ba::test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval[{"sent": "x"}]
+FAILED repos/mcp-mail-qa7-1f486ba::test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval[["x"]]
+FAILED repos/mcp-mail-qa7-1f486ba::test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval[{"sent": [1]}]
+FAILED repos/mcp-mail-qa7-1f486ba::test_a_changed_approved_send_on_a_broken_log_leaves_log_and_approval[{"sent": [{"sent_at": 1}]}]
+FAILED repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_refuses_cleanly_with_a_limit[{"sent": "x"}]
+FAILED repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_refuses_cleanly_with_a_limit[["x"]]
+FAILED repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_refuses_cleanly_with_a_limit[{"sent": [1]}]
+FAILED repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_refuses_cleanly_with_a_limit[{"sent": [{"sent_at": 1}]}]
+FAILED repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_without_a_limit_sends_as_before[{"sent": "x"}]
+FAILED repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_without_a_limit_sends_as_before[["x"]]
+FAILED repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_without_a_limit_sends_as_before[{"sent": [1]}]
+FAILED repos/mcp-mail-qa7-1f486ba::test_repeat_guard_on_a_malformed_log_without_a_limit_sends_as_before[{"sent": [{"sent_at": 1}]}]
+FAILED repos/mcp-mail-qa7-1f486ba::test_repeat_guard_of_an_approved_send_on_a_malformed_log_without_a_limit[{"sent": "x"}]
+FAILED repos/mcp-mail-qa7-1f486ba::test_repeat_guard_of_an_approved_send_on_a_malformed_log_without_a_limit[["x"]]
+FAILED repos/mcp-mail-qa7-1f486ba::test_repeat_guard_of_an_approved_send_on_a_malformed_log_without_a_limit[{"sent": [1]}]
+FAILED repos/mcp-mail-qa7-1f486ba::test_repeat_guard_of_an_approved_send_on_a_malformed_log_without_a_limit[{"sent": [{"sent_at": 1}]}]
+FAILED repos/mcp-mail-qa7-1f486ba::test_mail_that_went_out_is_reported_sent_even_if_the_log_broke_meanwhile
+FAILED repos/mcp-mail-qa7-1f486ba::test_an_approved_mail_that_went_out_is_reported_sent_even_if_the_log_broke
+======================== 33 failed, 42 passed in 3.65s =========================
