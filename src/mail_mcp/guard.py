@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from email.utils import getaddresses
@@ -25,6 +26,15 @@ ADDRESS_RE = re.compile(r"[A-Za-z0-9._+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+")
 
 # sent_log entries that record no mail going to `to`, so the repeat guard ignores them.
 APPROVAL_EVENT_KINDS = frozenset({"approval_requested", "approved", "approval_voided"})
+
+# A send refused by SEND_MAX_PER_HOUR / SEND_MAX_PER_DAY. Nothing went out.
+LIMIT_REFUSED_KIND = "send_limit_refused"
+
+# Entries that record no mail going out: neither the repeat guard nor the send limits count them.
+NOT_SENT_KINDS = APPROVAL_EVENT_KINDS | {LIMIT_REFUSED_KIND}
+
+# How many entries the log keeps, apart from those a send limit still has to count.
+_KEEP_ENTRIES = 500
 
 # One plain addr-spec: dot-atom local part, a domain of at least two DNS labels. ASCII only,
 # no quotes, spaces, brackets, commas or semicolons: nothing smtplib could read differently.
@@ -164,18 +174,51 @@ class RecipientGuard:
         return GuardResult(True, [])
 
 
-class SentLog:
-    """Append-only record of what this server sent, for audit and dedup."""
+class SentLogUnreadable(Exception):
+    """The audit log exists but cannot be read, so what was sent cannot be counted."""
 
-    def __init__(self, path: Path, dedup_minutes: int = 0) -> None:
+
+class SentLog:
+    """Append-only record of what this server sent, for audit, dedup and the send limits."""
+
+    def __init__(self, path: Path, dedup_minutes: int = 0, keep_seconds: int = 0) -> None:
         self._path = path
         self._dedup_minutes = dedup_minutes
+        # Entries younger than this that count as sent mail survive the cut at _KEEP_ENTRIES,
+        # so a send limit over that window never loses count. 0: plain cut, as before.
+        self._keep_seconds = keep_seconds
 
     def _read(self) -> list[dict]:
+        """The entries, leniently: an unreadable log or one of the wrong shape reads as empty."""
         try:
-            return json.loads(self._path.read_text()).get("sent", [])
+            data = json.loads(self._path.read_text())
         except (OSError, ValueError):
             return []
+        entries = data.get("sent", []) if isinstance(data, dict) else []
+        return [entry for entry in entries if isinstance(entry, dict)] if isinstance(entries, list) else []
+
+    def _read_strict(self) -> list[dict]:
+        """The entries, for counting. A missing log is empty; anything unreadable raises."""
+        try:
+            text = self._path.read_text()
+        except FileNotFoundError:
+            return []
+        except OSError:
+            raise SentLogUnreadable() from None
+        try:
+            entries = json.loads(text)["sent"]
+        except (ValueError, TypeError, KeyError):
+            raise SentLogUnreadable() from None
+        if not isinstance(entries, list) or not all(
+            isinstance(entry, dict) and isinstance(entry.get("sent_at"), str) for entry in entries
+        ):
+            raise SentLogUnreadable()
+        return entries
+
+    def check_readable(self) -> None:
+        """With a send limit, raise SentLogUnreadable before anything would write the log."""
+        if self._keep_seconds:
+            self._read_strict()
 
     def recently_sent_to(self, recipients: list[str]) -> str | None:
         if self._dedup_minutes <= 0:
@@ -183,28 +226,76 @@ class SentLog:
         cutoff = (datetime.now() - timedelta(minutes=self._dedup_minutes)).isoformat()
         targets = {extract_address(r) for r in recipients}
         for entry in self._read():
-            if entry.get("sent_at", "") < cutoff or entry.get("kind") in APPROVAL_EVENT_KINDS:
+            sent_at = entry.get("sent_at")
+            if not isinstance(sent_at, str) or sent_at < cutoff or entry.get("kind") in NOT_SENT_KINDS:
                 continue
-            if extract_address(entry.get("to", "")) in targets:
-                return entry.get("sent_at", "")
+            to = entry.get("to")
+            if isinstance(to, str) and extract_address(to) in targets:
+                return sent_at
         return None
 
-    def record(self, recipients: list[str], subject: str, kind: str) -> None:
-        entries = self._read()
+    def sent_since(self, seconds: int) -> int:
+        """Recipients (To and Cc) of the mail sent in the last `seconds`.
+
+        Raises SentLogUnreadable rather than count an unreadable log as empty. An entry from
+        before send ids were logged counts as one recipient.
+        """
+        cutoff = (datetime.now() - timedelta(seconds=seconds)).isoformat()
+        counted: set[str] = set()
+        total = 0
+        for entry in self._read_strict():
+            if entry["sent_at"] < cutoff or entry.get("kind") in NOT_SENT_KINDS:
+                continue
+            send_id = entry.get("send_id")
+            if not isinstance(send_id, str):
+                total += 1
+                continue
+            if send_id in counted:
+                continue
+            counted.add(send_id)
+            weight = entry.get("recipients")
+            total += weight if type(weight) is int and weight >= 1 else 1
+        return total
+
+    def record(self, recipients: list[str], subject: str, kind: str, cc: list[str] | None = None) -> None:
         now = datetime.now().isoformat(timespec="seconds")
-        for recipient in recipients:
-            entries.append(
-                {
-                    "to": extract_address(recipient),
-                    "subject": subject,
-                    "sent_at": now,
-                    "kind": kind,
-                }
-            )
+        extra: dict = {}
+        if kind not in NOT_SENT_KINDS:
+            # One id per mail and its recipient count, To and Cc: what the send limits count.
+            extra = {"send_id": secrets.token_hex(8), "recipients": len(recipients) + len(cc or [])}
+        self._append(
+            {"to": extract_address(recipient), "subject": subject, "sent_at": now, "kind": kind, **extra}
+            for recipient in recipients
+        )
+
+    def record_limit_refusal(self, recipients: list[str], subject: str, limit: str) -> None:
+        now = datetime.now().isoformat(timespec="seconds")
+        self._append(
+            {"to": extract_address(r), "subject": subject, "sent_at": now, "kind": LIMIT_REFUSED_KIND, "limit": limit}
+            for r in recipients
+        )
+
+    def _append(self, new) -> None:
+        # With a send limit, a log that cannot be read is evidence and the count: never
+        # replaced by a fresh one, which would reset the limit (raises SentLogUnreadable).
+        entries = self._read_strict() if self._keep_seconds else self._read()
+        entries.extend(new)
         self._path.parent.mkdir(parents=True, exist_ok=True)
         tmp = self._path.with_suffix(".tmp")
-        tmp.write_text(json.dumps({"sent": entries[-500:]}, indent=2, ensure_ascii=False))
+        tmp.write_text(json.dumps({"sent": self._cut(entries)}, indent=2, ensure_ascii=False))
         os.replace(tmp, self._path)
+
+    def _cut(self, entries: list) -> list:
+        if not self._keep_seconds:
+            return entries[-_KEEP_ENTRIES:]
+        cutoff = (datetime.now() - timedelta(seconds=self._keep_seconds)).isoformat()
+        start = max(0, len(entries) - _KEEP_ENTRIES)
+
+        def still_counted(entry) -> bool:
+            sent_at = entry.get("sent_at") if isinstance(entry, dict) else None
+            return isinstance(sent_at, str) and sent_at >= cutoff and entry.get("kind") not in NOT_SENT_KINDS
+
+        return [entry for i, entry in enumerate(entries) if i >= start or still_counted(entry)]
 
     def tail(self, limit: int = 20) -> list[dict]:
         return self._read()[-limit:]
