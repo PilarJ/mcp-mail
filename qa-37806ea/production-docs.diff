@@ -1,0 +1,100 @@
+diff --git a/.env.example b/.env.example
+index 62a60c0..faf45e5 100644
+--- a/.env.example
++++ b/.env.example
+@@ -55,6 +55,10 @@ APPROVAL_TTL_HOURS=72
+ APPROVAL_MAX_PER_HOUR=5
+ APPROVAL_MAX_PENDING=10
+ 
++# Whether mail_get marks the message read when the call does not say (mark_seen).
++# Default true; false leaves mail unread unless a call asks. No other tool marks mail read.
++MARK_SEEN_ON_GET=true
++
+ # true adds mail_delete (permanent). Leave off unless you mean it.
+ ALLOW_DELETE=false
+ 
+diff --git a/README.md b/README.md
+index 39ebd4d..5035da6 100644
+--- a/README.md
++++ b/README.md
+@@ -167,7 +167,10 @@ others if you would rather not use GitHub; swapping is a one-line change in
+ **Reading** — `mail_list`, `mail_search`, `mail_get`, `mail_get_thread`,
+ `mail_get_attachment`
+ 
+-Listing never marks anything read; `mail_get` only does so if asked.
++`mail_get` marks the message read, so the mailbox shows which mail has been handled.
++`MARK_SEEN_ON_GET=false` turns that off for the instance, and a call can override the
++instance either way with `mark_seen=true` or `mark_seen=false`. Nothing else marks mail read:
++listing, search, threads, attachments and the approval check leave flags as they are.
+ 
+ **Mailbox changes** — `mail_mark`, `mail_move` (needs `confirm`),
+ `mail_save_draft`, `mail_delete` (only with `ALLOW_DELETE=true`, needs `confirm`)
+@@ -243,6 +246,7 @@ Note the `/mcp` suffix; the bare domain is not the endpoint.
+ | `IMAP_*` / `SMTP_*` | Mailbox credentials |
+ | `FROM_NAME` | Display name on outgoing mail |
+ | `ALLOWED_RECIPIENTS` | Addresses or `@domain` entries mail may be sent to; `*` permits anyone (no boundary left); empty disables sending |
++| `MARK_SEEN_ON_GET` | Whether `mail_get` marks the message read when the call does not pass `mark_seen`; default `true`, empty means the default, a value that is not a boolean stops the server |
+ | `ALLOW_DELETE` | `true` registers `mail_delete`, which expunges permanently; default off |
+ | `SENT_FOLDER` | Existing folder that receives a copy of sent mail, its IMAP name as `mail_list_folders` shows it; empty keeps no copy |
+ | `DEDUP_MINUTES` | Refuse a second mail to the same recipient within this window; 0 disables |
+diff --git a/src/mail_mcp/settings.py b/src/mail_mcp/settings.py
+index dc0a7b4..1274728 100644
+--- a/src/mail_mcp/settings.py
++++ b/src/mail_mcp/settings.py
+@@ -62,6 +62,10 @@ class Settings(BaseSettings):
+     # no copy is kept. The folder must exist; it is never created.
+     sent_folder: str = Field(default="", alias="SENT_FOLDER")
+ 
++    # Whether mail_get marks the message read when the call does not say. A call can still
++    # pass mark_seen to override it. No other tool ever marks mail read. Empty: the default.
++    mark_seen_on_get: bool = Field(default=True, alias="MARK_SEEN_ON_GET")
++
+     # Registers mail_delete, which expunges for good. Off unless asked for.
+     allow_delete: bool = Field(default=False, alias="ALLOW_DELETE")
+ 
+@@ -89,6 +93,11 @@ class Settings(BaseSettings):
+     def _empty_is_unset(cls, v):
+         return None if isinstance(v, str) and not v.strip() else v
+ 
++    @field_validator("mark_seen_on_get", mode="before")
++    @classmethod
++    def _empty_is_default(cls, v):
++        return True if isinstance(v, str) and not v.strip() else v
++
+     @staticmethod
+     def _split(raw: str) -> list[str]:
+         return [item.strip() for item in raw.split(",") if item.strip()]
+diff --git a/src/mail_mcp/tools.py b/src/mail_mcp/tools.py
+index e21f1de..7e69d78 100644
+--- a/src/mail_mcp/tools.py
++++ b/src/mail_mcp/tools.py
+@@ -234,12 +234,27 @@ def register(
+             "messages": await summaries(msgs, folder),
+         }
+ 
+-    @mcp.tool(description=f"Read one message from {box} in full, including its body and attachment list.")
++    mark_seen_default = (
++        "this mailbox marks it read" if settings.mark_seen_on_get else "this mailbox does not mark it read"
++    )
++
++    @mcp.tool(
++        description=f"Read one message from {box} in full, including its body and attachment list. "
++        f"Unless the call sets mark_seen, {mark_seen_default}."
++    )
+     async def mail_get(
+         uid: Uid,
+         folder: Folder = "INBOX",
+-        mark_seen: Annotated[bool, Field(description="Mark the message read as a side effect.")] = False,
++        mark_seen: Annotated[
++            bool | None,
++            Field(
++                description="true marks the message read, false leaves its read state as it is. "
++                "Omit it to use this mailbox's setting (MARK_SEEN_ON_GET)."
++            ),
++        ] = None,
+     ) -> dict:
++        if mark_seen is None:
++            mark_seen = settings.mark_seen_on_get
+         msg = await imap.get_message(folder, uid, mark_seen)
+         delivered = (await delivery_dates([msg], folder)).get(msg.uid)
+         return {"mailbox": box, "folder": folder, **render.full(msg, settings.max_body_chars, delivered)}

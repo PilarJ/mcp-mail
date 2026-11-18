@@ -1,0 +1,786 @@
+{
+  "mail_get_matrix": [
+    {
+      "instance": false,
+      "call": "omitted",
+      "initially_seen": false,
+      "effective": false,
+      "flags_before": [
+        "\\Answered",
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Answered",
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "other_uid_unchanged": true
+    },
+    {
+      "instance": false,
+      "call": "omitted",
+      "initially_seen": true,
+      "effective": false,
+      "flags_before": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "other_uid_unchanged": true
+    },
+    {
+      "instance": false,
+      "call": null,
+      "initially_seen": false,
+      "effective": false,
+      "flags_before": [
+        "\\Answered",
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Answered",
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "other_uid_unchanged": true
+    },
+    {
+      "instance": false,
+      "call": null,
+      "initially_seen": true,
+      "effective": false,
+      "flags_before": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "other_uid_unchanged": true
+    },
+    {
+      "instance": false,
+      "call": false,
+      "initially_seen": false,
+      "effective": false,
+      "flags_before": [
+        "\\Answered",
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Answered",
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "other_uid_unchanged": true
+    },
+    {
+      "instance": false,
+      "call": false,
+      "initially_seen": true,
+      "effective": false,
+      "flags_before": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "other_uid_unchanged": true
+    },
+    {
+      "instance": false,
+      "call": true,
+      "initially_seen": false,
+      "effective": true,
+      "flags_before": [
+        "\\Answered",
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "other_uid_unchanged": true
+    },
+    {
+      "instance": false,
+      "call": true,
+      "initially_seen": true,
+      "effective": true,
+      "flags_before": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "other_uid_unchanged": true
+    },
+    {
+      "instance": true,
+      "call": "omitted",
+      "initially_seen": false,
+      "effective": true,
+      "flags_before": [
+        "\\Answered",
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "other_uid_unchanged": true
+    },
+    {
+      "instance": true,
+      "call": "omitted",
+      "initially_seen": true,
+      "effective": true,
+      "flags_before": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "other_uid_unchanged": true
+    },
+    {
+      "instance": true,
+      "call": null,
+      "initially_seen": false,
+      "effective": true,
+      "flags_before": [
+        "\\Answered",
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "other_uid_unchanged": true
+    },
+    {
+      "instance": true,
+      "call": null,
+      "initially_seen": true,
+      "effective": true,
+      "flags_before": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "other_uid_unchanged": true
+    },
+    {
+      "instance": true,
+      "call": false,
+      "initially_seen": false,
+      "effective": false,
+      "flags_before": [
+        "\\Answered",
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Answered",
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "other_uid_unchanged": true
+    },
+    {
+      "instance": true,
+      "call": false,
+      "initially_seen": true,
+      "effective": false,
+      "flags_before": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "other_uid_unchanged": true
+    },
+    {
+      "instance": true,
+      "call": true,
+      "initially_seen": false,
+      "effective": true,
+      "flags_before": [
+        "\\Answered",
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "other_uid_unchanged": true
+    },
+    {
+      "instance": true,
+      "call": true,
+      "initially_seen": true,
+      "effective": true,
+      "flags_before": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Answered",
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "other_uid_unchanged": true
+    }
+  ],
+  "other_reads_and_approval": [
+    {
+      "tool": "mail_list",
+      "instance": false,
+      "initially_seen": false,
+      "flags_before": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "fetches": [
+        "EDAJ4 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "mail_list",
+      "instance": false,
+      "initially_seen": false,
+      "flags_before": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "fetches": [
+        "LKCP4 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "mail_search",
+      "instance": false,
+      "initially_seen": false,
+      "flags_before": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "fetches": [
+        "BFOM4 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "mail_get_thread",
+      "instance": false,
+      "initially_seen": false,
+      "flags_before": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "fetches": [
+        "LGIN4 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)",
+        "LGIN6 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "mail_get_attachment",
+      "instance": false,
+      "initially_seen": false,
+      "flags_before": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "fetches": [
+        "BGNN4 UID FETCH 7 (BODY.PEEK[] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "approval_candidates",
+      "instance": false,
+      "initially_seen": false,
+      "flags_before": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "fetches": [
+        "PIDD4 UID FETCH 7 (FLAGS INTERNALDATE RFC822.SIZE)",
+        "PIDD5 UID FETCH 7 (FLAGS INTERNALDATE BODY.PEEK[])"
+      ]
+    },
+    {
+      "tool": "mail_list",
+      "instance": false,
+      "initially_seen": true,
+      "flags_before": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "fetches": [
+        "NIMK4 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "mail_list",
+      "instance": false,
+      "initially_seen": true,
+      "flags_before": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "fetches": [
+        "DFHM4 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "mail_search",
+      "instance": false,
+      "initially_seen": true,
+      "flags_before": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "fetches": [
+        "CIME4 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "mail_get_thread",
+      "instance": false,
+      "initially_seen": true,
+      "flags_before": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "fetches": [
+        "JBAP4 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)",
+        "JBAP6 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "mail_get_attachment",
+      "instance": false,
+      "initially_seen": true,
+      "flags_before": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "fetches": [
+        "IJEO4 UID FETCH 7 (BODY.PEEK[] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "approval_candidates",
+      "instance": false,
+      "initially_seen": true,
+      "flags_before": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "fetches": [
+        "DEOC4 UID FETCH 7 (FLAGS INTERNALDATE RFC822.SIZE)",
+        "DEOC5 UID FETCH 7 (FLAGS INTERNALDATE BODY.PEEK[])"
+      ]
+    },
+    {
+      "tool": "mail_list",
+      "instance": true,
+      "initially_seen": false,
+      "flags_before": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "fetches": [
+        "FFBM4 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "mail_list",
+      "instance": true,
+      "initially_seen": false,
+      "flags_before": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "fetches": [
+        "IENL4 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "mail_search",
+      "instance": true,
+      "initially_seen": false,
+      "flags_before": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "fetches": [
+        "GDCH4 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "mail_get_thread",
+      "instance": true,
+      "initially_seen": false,
+      "flags_before": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "fetches": [
+        "KJML4 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)",
+        "KJML6 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "mail_get_attachment",
+      "instance": true,
+      "initially_seen": false,
+      "flags_before": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "fetches": [
+        "POLG4 UID FETCH 7 (BODY.PEEK[] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "approval_candidates",
+      "instance": true,
+      "initially_seen": false,
+      "flags_before": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "qa_keep"
+      ],
+      "fetches": [
+        "GABJ4 UID FETCH 7 (FLAGS INTERNALDATE RFC822.SIZE)",
+        "GABJ5 UID FETCH 7 (FLAGS INTERNALDATE BODY.PEEK[])"
+      ]
+    },
+    {
+      "tool": "mail_list",
+      "instance": true,
+      "initially_seen": true,
+      "flags_before": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "fetches": [
+        "OJCI4 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "mail_list",
+      "instance": true,
+      "initially_seen": true,
+      "flags_before": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "fetches": [
+        "LHHP4 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "mail_search",
+      "instance": true,
+      "initially_seen": true,
+      "flags_before": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "fetches": [
+        "IBIC4 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "mail_get_thread",
+      "instance": true,
+      "initially_seen": true,
+      "flags_before": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "fetches": [
+        "BKOJ4 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)",
+        "BKOJ6 UID FETCH 7 (BODY.PEEK[HEADER] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "mail_get_attachment",
+      "instance": true,
+      "initially_seen": true,
+      "flags_before": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "fetches": [
+        "PFAI4 UID FETCH 7 (BODY.PEEK[] UID FLAGS RFC822.SIZE)"
+      ]
+    },
+    {
+      "tool": "approval_candidates",
+      "instance": true,
+      "initially_seen": true,
+      "flags_before": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "flags_after": [
+        "\\Flagged",
+        "\\Seen",
+        "qa_keep"
+      ],
+      "fetches": [
+        "EJCM4 UID FETCH 7 (FLAGS INTERNALDATE RFC822.SIZE)",
+        "EJCM5 UID FETCH 7 (FLAGS INTERNALDATE BODY.PEEK[])"
+      ]
+    }
+  ],
+  "descriptions": [
+    {
+      "instance": false,
+      "description": "Read one message from box@example.test in full, including its body and attachment list. Unless the call sets mark_seen, this mailbox does not mark it read.",
+      "schema": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "true marks the message read, false leaves its read state as it is. Omit it to use this mailbox's setting (MARK_SEEN_ON_GET)."
+      }
+    },
+    {
+      "instance": true,
+      "description": "Read one message from box@example.test in full, including its body and attachment list. Unless the call sets mark_seen, this mailbox marks it read.",
+      "schema": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "true marks the message read, false leaves its read state as it is. Omit it to use this mailbox's setting (MARK_SEEN_ON_GET)."
+      }
+    }
+  ],
+  "startup": [
+    {
+      "value": "maybe",
+      "exit_code": 1,
+      "error_names_setting": true,
+      "error_explains_boolean": true,
+      "network_attempted": false
+    },
+    {
+      "value": "2",
+      "exit_code": 1,
+      "error_names_setting": true,
+      "error_explains_boolean": true,
+      "network_attempted": false
+    },
+    {
+      "value": "truee",
+      "exit_code": 1,
+      "error_names_setting": true,
+      "error_explains_boolean": true,
+      "network_attempted": false
+    },
+    {
+      "value": "none",
+      "exit_code": 1,
+      "error_names_setting": true,
+      "error_explains_boolean": true,
+      "network_attempted": false
+    }
+  ],
+  "runtime": {
+    "python": "3.12.16",
+    "fastmcp": "3.4.11",
+    "imap-tools": "1.16.0",
+    "pydantic": "2.14.3",
+    "pydantic-settings": "2.16.3",
+    "pytest": "9.2.0"
+  }
+}

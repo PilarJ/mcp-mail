@@ -1,0 +1,14 @@
+{
+  "mail_get_cases": 16,
+  "untouched_read_cases": 24,
+  "invalid_startups": 4,
+  "runtime": {
+    "python": "3.12.16",
+    "fastmcp": "3.4.11",
+    "imap-tools": "1.16.0",
+    "pydantic": "2.14.3",
+    "pydantic-settings": "2.16.3",
+    "pytest": "9.2.0"
+  },
+  "result": "PASS"
+}
