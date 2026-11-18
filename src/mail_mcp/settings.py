@@ -62,6 +62,10 @@ class Settings(BaseSettings):
     # no copy is kept. The folder must exist; it is never created.
     sent_folder: str = Field(default="", alias="SENT_FOLDER")
 
+    # Whether mail_get marks the message read when the call does not say. A call can still
+    # pass mark_seen to override it. No other tool ever marks mail read. Empty: the default.
+    mark_seen_on_get: bool = Field(default=True, alias="MARK_SEEN_ON_GET")
+
     # Registers mail_delete, which expunges for good. Off unless asked for.
     allow_delete: bool = Field(default=False, alias="ALLOW_DELETE")
 
@@ -88,6 +92,11 @@ class Settings(BaseSettings):
     @classmethod
     def _empty_is_unset(cls, v):
         return None if isinstance(v, str) and not v.strip() else v
+
+    @field_validator("mark_seen_on_get", mode="before")
+    @classmethod
+    def _empty_is_default(cls, v):
+        return True if isinstance(v, str) and not v.strip() else v
 
     @staticmethod
     def _split(raw: str) -> list[str]:
