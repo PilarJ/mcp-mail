@@ -234,12 +234,27 @@ def register(
             "messages": await summaries(msgs, folder),
         }
 
-    @mcp.tool(description=f"Read one message from {box} in full, including its body and attachment list.")
+    mark_seen_default = (
+        "this mailbox marks it read" if settings.mark_seen_on_get else "this mailbox does not mark it read"
+    )
+
+    @mcp.tool(
+        description=f"Read one message from {box} in full, including its body and attachment list. "
+        f"Unless the call sets mark_seen, {mark_seen_default}."
+    )
     async def mail_get(
         uid: Uid,
         folder: Folder = "INBOX",
-        mark_seen: Annotated[bool, Field(description="Mark the message read as a side effect.")] = False,
+        mark_seen: Annotated[
+            bool | None,
+            Field(
+                description="true marks the message read, false leaves its read state as it is. "
+                "Omit it to use this mailbox's setting (MARK_SEEN_ON_GET)."
+            ),
+        ] = None,
     ) -> dict:
+        if mark_seen is None:
+            mark_seen = settings.mark_seen_on_get
         msg = await imap.get_message(folder, uid, mark_seen)
         delivered = (await delivery_dates([msg], folder)).get(msg.uid)
         return {"mailbox": box, "folder": folder, **render.full(msg, settings.max_body_chars, delivered)}

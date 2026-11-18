@@ -167,7 +167,10 @@ others if you would rather not use GitHub; swapping is a one-line change in
 **Reading** — `mail_list`, `mail_search`, `mail_get`, `mail_get_thread`,
 `mail_get_attachment`
 
-Listing never marks anything read; `mail_get` only does so if asked.
+`mail_get` marks the message read, so the mailbox shows which mail has been handled.
+`MARK_SEEN_ON_GET=false` turns that off for the instance, and a call can override the
+instance either way with `mark_seen=true` or `mark_seen=false`. Nothing else marks mail read:
+listing, search, threads, attachments and the approval check leave flags as they are.
 
 **Mailbox changes** — `mail_mark`, `mail_move` (needs `confirm`),
 `mail_save_draft`, `mail_delete` (only with `ALLOW_DELETE=true`, needs `confirm`)
@@ -243,6 +246,7 @@ Note the `/mcp` suffix; the bare domain is not the endpoint.
 | `IMAP_*` / `SMTP_*` | Mailbox credentials |
 | `FROM_NAME` | Display name on outgoing mail |
 | `ALLOWED_RECIPIENTS` | Addresses or `@domain` entries mail may be sent to; `*` permits anyone (no boundary left); empty disables sending |
+| `MARK_SEEN_ON_GET` | Whether `mail_get` marks the message read when the call does not pass `mark_seen`; default `true`, empty means the default, a value that is not a boolean stops the server |
 | `ALLOW_DELETE` | `true` registers `mail_delete`, which expunges permanently; default off |
 | `SENT_FOLDER` | Existing folder that receives a copy of sent mail, its IMAP name as `mail_list_folders` shows it; empty keeps no copy |
 | `DEDUP_MINUTES` | Refuse a second mail to the same recipient within this window; 0 disables |
