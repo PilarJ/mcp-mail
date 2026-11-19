@@ -1,0 +1,43 @@
+PASS mail_list attachment status
+PASS mail_list exact attachment names
+PASS mail_list true RFC822 size
+PASS mail_list headers only and BODYSTRUCTURE
+PASS mail_search attachment status
+PASS mail_search exact attachment names
+PASS mail_search true RFC822 size
+PASS mail_search headers only and BODYSTRUCTURE
+PASS mail_get_thread attachment status
+PASS mail_get_thread exact attachment names
+PASS mail_get_thread true RFC822 size
+PASS mail_get_thread headers only and BODYSTRUCTURE
+PASS mail without attachments is false
+FAIL body truncation reports full length
+PASS mail_get original message size
+PASS invoice.pdf readable default
+PASS invoice total and identifier preserved
+PASS invoice.pdf raw bytes unchanged
+PASS phone-exif6.jpg readable default
+PASS EXIF 6 phone image upright
+PASS phone-exif6.jpg raw bytes unchanged
+PASS scan.pdf readable default
+PASS scan portrait preserved
+PASS scan.pdf raw bytes unchanged
+PASS scan-rotate90.pdf readable default
+FAIL scanned PDF Rotate 90 respected
+PASS scan-rotate90.pdf raw bytes unchanged
+PASS invoices.xlsx readable default
+PASS real XLSX sheets and values preserved
+PASS invoices.xlsx raw bytes unchanged
+PASS order.docx readable default
+PASS real DOCX paragraph and table preserved
+PASS order.docx raw bytes unchanged
+PASS reordered.pptx readable default
+FAIL PPTX presentation order preserved
+PASS reordered.pptx raw bytes unchanged
+PASS forwarded.eml readable default
+PASS attached EML body and nested filename preserved
+PASS česká příloha.txt readable default
+PASS česká příloha.txt raw bytes unchanged
+PASS all reads preserve unread flags
+PASS no STORE mutation during reads
+TOTAL: 39/42 passed

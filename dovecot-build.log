@@ -1,0 +1,80 @@
+#0 building with "colima" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.dovecot
+#1 transferring dockerfile: 494B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/alpine:3.20
+#2 ...
+
+#3 [auth] library/alpine:pull token for registry-1.docker.io
+#3 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/alpine:3.20
+#2 DONE 1.4s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 521B done
+#5 DONE 0.0s
+
+#6 [1/4] FROM docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
+#6 resolve docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc 0.0s done
+#6 DONE 0.0s
+
+#7 [2/4] RUN apk add --no-cache dovecot openssl && adduser -D -u 5000 vmail && mkdir -p /home/vmail/Maildir/cur /home/vmail/Maildir/new /home/vmail/Maildir/tmp && chown -R vmail:vmail /home/vmail
+#7 0.137 fetch https://dl-cdn.alpinelinux.org/alpine/v3.20/main/aarch64/APKINDEX.tar.gz
+#7 0.315 fetch https://dl-cdn.alpinelinux.org/alpine/v3.20/community/aarch64/APKINDEX.tar.gz
+#7 0.624 (1/13) Installing openssl (3.3.7-r0)
+#7 0.681 (2/13) Installing libbz2 (1.0.8-r6)
+#7 0.709 (3/13) Installing libcap2 (2.78-r0)
+#7 0.734 (4/13) Installing icu-data-en (74.2-r1)
+#7 0.840 Executing icu-data-en-74.2-r1.post-install
+#7 0.844 *
+#7 0.844 * If you need ICU with non-English locales and legacy charset support, install
+#7 0.844 * package icu-data-full.
+#7 0.844 *
+#7 0.845 (5/13) Installing libgcc (13.2.1_git20240309-r1)
+#7 0.880 (6/13) Installing libstdc++ (13.2.1_git20240309-r1)
+#7 0.984 (7/13) Installing icu-libs (74.2-r1)
+#7 1.181 (8/13) Installing lz4-libs (1.9.4-r5)
+#7 1.213 (9/13) Installing xz-libs (5.8.3-r0)
+#7 1.248 (10/13) Installing libsodium (1.0.19-r1)
+#7 1.302 (11/13) Installing libstemmer (2.2.0-r0)
+#7 1.399 (12/13) Installing zstd-libs (1.5.6-r0)
+#7 1.523 (13/13) Installing dovecot (2.3.21.1-r0)
+#7 1.889 Executing dovecot-2.3.21.1-r0.pre-install
+#7 2.104 Executing dovecot-2.3.21.1-r0.post-install
+#7 2.122 ..+.+........+......+.............+......+.....+++++++++++++++++++++++++++++++++++++++*...+...+.......+...+.....+...+.......+...+..+......+.........+...+++++++++++++++++++++++++++++++++++++++*.+........+......+.......+...+.....+..............................+......+...+............+....+......+......+..+.+.....+.......+...+......+.....+....+......+.....+.+............+...+...+..+...............+.......+...........+.......+.................+......+......+.............+...........+.+....................+....+...............+.....+.+.........+..+....+...+.....+................+..+...+.+...+..+..........+...+...+.....+............+.+...........+...+...+...+..........+...........+.+..+......+.......+........+.+...+..+...+............+.............++++++
+#7 2.142 ...+........+.+++++++++++++++++++++++++++++++++++++++*....+..+...+......................+...+...+..+++++++++++++++++++++++++++++++++++++++*...+........+.+...+........+...+......+.............+..+......+....+...+...+.....+.......+.....+..................+...+......+.+..+..........+..+.+........+..........+..+.......+.....+......+.+......+..+......+.+......+.........+......+..+.+.....+.+..............+.+......+.....+............+.+..............+...+...+.+......+..+..........+..+....+.....+.+.....+....+.....+.+.....+.........+....+..+......+.......+...+...+...............+..+...+.+...........+.......+..+...............+.+........+....+..+.+.....+...+......................+.....+....+...+........+...............+...+....+..+..........+..............+.+..................+...+........+.........+.+..+.......+..+...+.+.........+........+.............+......+......+............+..+...+...+.......+..+....+...........++++++
+#7 2.166 -----
+#7 2.168 
+#7 2.175 subject=OU=IMAP server, CN=imap.example.com, emailAddress=postmaster@example.com
+#7 2.175 SHA1 Fingerprint=19:A5:4E:02:73:07:94:67:97:E6:FA:51:5B:EB:3F:02:62:B2:EB:C8
+#7 2.176 Executing busybox-1.36.1-r31.trigger
+#7 2.181 OK: 35 MiB in 27 packages
+#7 DONE 2.3s
+
+#8 [3/4] RUN openssl req -x509 -newkey rsa:2048 -nodes -keyout /etc/dovecot/qa.key -out /etc/dovecot/qa.crt -days 2 -subj /CN=localhost -addext subjectAltName=DNS:localhost,IP:127.0.0.1
+#8 0.127 .+++++++++++++++++++++++++++++++++++++++*..+...+....+......+.....................+...+...+........+....+..+...+.+...........+...............+..........+...+...+.....+...+......+...+.+..+.......+.....+.+..+...+.+...........+....+........+.......+......+..+.+++++++++++++++++++++++++++++++++++++++*..+..+.+.....+....+..+.........+..........+.........+..+..........+...+..+.+.....+.............+..+....+...+.....+.+.....+............+.............+............+.....+...+.+........+...+.........+.+...+..+...+......+....+..+....+........+.+.........+.....+.............+...+......+.....+...+.......+.....+.+..+.......+.........++++++
+#8 0.140 .....+.+...+.........+.....+.......+........+++++++++++++++++++++++++++++++++++++++*.+.......+......+........+......+.+++++++++++++++++++++++++++++++++++++++*...+.+..+.+.........+..+.+....................+...+............+....+........+.+...............+.........+......+......+......+.........+...++++++
+#8 0.151 -----
+#8 DONE 0.2s
+
+#9 [4/4] COPY dovecot.conf /etc/dovecot/dovecot.conf
+#9 DONE 0.1s
+
+#10 exporting to image
+#10 exporting layers
+#10 exporting layers 0.7s done
+#10 exporting manifest sha256:9ab68202938b1713082c45c39e310826ed4b9a72ddbd3425c849178fde81b081 0.0s done
+#10 exporting config sha256:c656e1c25b30f226fe2cb45f2e99bc41822e3009a552db3fc05df93ba158f052 0.0s done
+#10 exporting attestation manifest sha256:ed59d062c4c53f14ec2d7d0740662636103890d5a7f8fdea8e03338765f7ab23 0.0s done
+#10 exporting manifest list sha256:a67364e4c58fa6a8abb5d03be63a578ee682b7d6455453aed81bf5d490823e26 done
+#10 naming to docker.io/library/tester-mcp14-dovecot:local done
+#10 unpacking to docker.io/library/tester-mcp14-dovecot:local
+#10 unpacking to docker.io/library/tester-mcp14-dovecot:local 0.2s done
+#10 DONE 1.0s

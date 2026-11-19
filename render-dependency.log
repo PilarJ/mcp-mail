@@ -1,0 +1,18 @@
+Using Python 3.12.16 environment at: repos/mcp-mail-qa14-7266733-routine/.venv
+Resolved 12 packages in 384ms
+Downloading pymupdf (64.1MiB)
+Downloading onnxruntime (21.5MiB)
+ Downloaded onnxruntime
+ Downloaded pymupdf
+Prepared 5 packages in 8.53s
+Installed 10 packages in 42ms
+ + flatbuffers==25.12.19
+ + networkx==3.7
+ + numpy==2.5.5
+ + onnxruntime==1.32.0
+ + protobuf==7.36.2
+ + psutil==7.2.2
+ + pymupdf==2.1
+ + pymupdf-layout==2.1
+ + pymupdf4llm==2.1
+ + tabulate==0.10.0
