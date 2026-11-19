@@ -38,12 +38,12 @@ def html_to_text(html: str) -> str:
     return _WS_RE.sub("\n\n", text).strip()
 
 
-def body_text(msg, max_chars: int) -> tuple[str, bool]:
-    """Prefer text/plain, fall back to flattened HTML. Returns (text, truncated)."""
+def body_text(msg, max_chars: int) -> tuple[str, bool, int]:
+    """Prefer text/plain, fall back to flattened HTML. Returns (text, truncated, full length)."""
     text = (msg.text or "").strip() or html_to_text(msg.html or "")
     if len(text) > max_chars:
-        return text[:max_chars] + "\n\n[…truncated…]", True
-    return text, False
+        return text[:max_chars] + "\n\n[…truncated…]", True, len(text)
+    return text, False, len(text)
 
 
 def has_date(msg) -> bool:
@@ -51,12 +51,21 @@ def has_date(msg) -> bool:
     return bool(msg.date_str) and msg.date.replace(tzinfo=None) != datetime(1900, 1, 1)
 
 
-def summarise(msg, delivered_at: datetime | None = None) -> dict:
+_FROM_MESSAGE: list[str] = []  # marker: the message itself holds its parts (mail_get)
+
+
+def summarise(msg, delivered_at: datetime | None = None, attachments: list[str] | None = _FROM_MESSAGE) -> dict:
     """Headers only — safe to list in bulk without pulling bodies.
 
     Without a usable Date header the date is when the server received the message
     (`delivered_at`), flagged by date_missing; never the 1900 placeholder.
+
+    A listed message has only its headers, so its attachments come from BODYSTRUCTURE
+    (`attachments`, names). None means the server did not say: has_attachments is then
+    None, unknown, never a false "no". The size is the server's RFC822.SIZE.
     """
+    if attachments is _FROM_MESSAGE:
+        attachments = [a.filename or f"(no name, {a.content_type})" for a in msg.attachments]
     dated = has_date(msg)
     date = msg.date if dated else delivered_at
     return {
@@ -68,13 +77,14 @@ def summarise(msg, delivered_at: datetime | None = None) -> dict:
         "date": date.isoformat() if date else None,
         **({} if dated else {"date_missing": True}),
         "unread": "\\Seen" not in (msg.flags or ()),
-        "has_attachments": bool(msg.attachments),
-        "size_bytes": msg.size,
+        "has_attachments": None if attachments is None else bool(attachments),
+        **({} if attachments is None else {"attachments": attachments}),
+        "size_bytes": msg.size_rfc822 or msg.size,
     }
 
 
 def full(msg, max_chars: int, delivered_at: datetime | None = None) -> dict:
-    text, truncated = body_text(msg, max_chars)
+    text, truncated, total = body_text(msg, max_chars)
     data = summarise(msg, delivered_at)
     data.update(
         {
@@ -91,6 +101,7 @@ def full(msg, max_chars: int, delivered_at: datetime | None = None) -> dict:
                 for a in msg.attachments
             ],
             "body_truncated": truncated,
+            **({"body_chars": total} if truncated else {}),
             "UNTRUSTED_CONTENT_NOTE": UNTRUSTED_NOTE,
             "body": f"--- BEGIN UNTRUSTED EMAIL BODY ---\n{text}\n--- END UNTRUSTED EMAIL BODY ---",
         }

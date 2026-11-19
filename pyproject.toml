@@ -13,6 +13,10 @@ dependencies = [
     "pydantic-settings>=2.7.1",
     "dkimpy==1.1.8",
     "dnspython==2.7.0",
+    # mail_get_attachment: PDF text and pictures, images, Office/OpenDocument XML (no DTDs).
+    "pypdf>=7.1,<8",
+    "pillow>=12,<14",
+    "defusedxml>=0.7.1,<0.8",
 ]
 
 [project.optional-dependencies]
