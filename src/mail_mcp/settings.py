@@ -78,6 +78,9 @@ class Settings(BaseSettings):
 
     max_body_chars: int = Field(default=50_000, alias="MAX_BODY_CHARS")
     max_attachment_bytes: int = Field(default=5_000_000, alias="MAX_ATTACHMENT_BYTES")
+    # Most text mail_get_attachment returns from one attachment; longer text is cut, and the
+    # result says so with truncated and the full length.
+    max_attachment_text_chars: int = Field(default=200_000, ge=1, alias="MAX_ATTACHMENT_TEXT_CHARS")
 
     data_dir: Path = Field(default=Path("/data"), alias="DATA_DIR")
     host: str = Field(default="0.0.0.0", alias="HOST")

@@ -5,16 +5,19 @@ from __future__ import annotations
 import base64
 import contextlib
 import functools
+import json
 import logging
 import time
-from typing import Annotated, Any, Callable
+from typing import Annotated, Any, Callable, Literal
 
 import anyio
 from fastmcp import FastMCP
+from fastmcp.tools.tool import ToolResult
 from imap_tools import AND
+from mcp.types import ImageContent, TextContent
 from pydantic import Field
 
-from . import approval, render, smtp
+from . import approval, attachments, render, smtp
 from .guard import (
     InvalidAddress,
     RecipientGuard,
@@ -151,9 +154,17 @@ def register(
         except MailError:
             return {}
 
+    async def attachment_names(msgs: list, folder: str) -> dict:
+        """Attachments of listed messages from BODYSTRUCTURE; best effort, missing is unknown."""
+        try:
+            return await imap.attachment_names(folder, [m.uid for m in msgs if m.uid])
+        except MailError:
+            return {}
+
     async def summaries(msgs: list, folder: str) -> list[dict]:
         dates = await delivery_dates(msgs, folder)
-        return [render.summarise(m, dates.get(m.uid)) for m in msgs]
+        names = await attachment_names(msgs, folder)
+        return [render.summarise(m, dates.get(m.uid), names.get(m.uid)) for m in msgs]
 
     # ---------------- diagnostics ----------------
 
@@ -278,30 +289,85 @@ def register(
             "messages": await summaries(msgs, folder),
         }
 
-    @mcp.tool(description=f"Download one attachment from a message in {box}, base64-encoded.")
+    def as_result(data: dict, images: list[tuple[bytes, str]] = ()) -> ToolResult:
+        """The dict as structured content and as JSON text, then the pictures as image content."""
+        content = [TextContent(type="text", text=json.dumps(data, ensure_ascii=False))]
+        content += [
+            ImageContent(type="image", data=base64.b64encode(raw).decode(), mimeType=mime) for raw, mime in images
+        ]
+        return ToolResult(content=content, structured_content=data)
+
+    @mcp.tool(
+        description=f"Read one attachment of a message in {box}: by default as text (PDF page by page, "
+        "Word, Excel, PowerPoint, OpenDocument, CSV, HTML, e-mail, XML, JSON, ISDOC) or as a picture "
+        "(images, and PDF pages without text such as scans). format=\"base64\" returns the original file."
+    )
     async def mail_get_attachment(
         uid: Uid,
         filename: Annotated[str, Field(description="Exact filename from mail_get.")],
         folder: Folder = "INBOX",
-    ) -> dict:
+        format: Annotated[
+            Literal["readable", "base64"],
+            Field(
+                description='"readable" (default): text and pictures you can read. '
+                '"base64": the original bytes, e.g. to pass the file on unchanged.'
+            ),
+        ] = "readable",
+    ) -> ToolResult:
+        """Never marks the message read. Text longer than MAX_ATTACHMENT_TEXT_CHARS is cut,
+        and the result then says truncated: true with the full length in text_chars."""
         msg = await imap.get_message(folder, uid, mark_seen=False)
         for att in msg.attachments:
             if att.filename != filename:
                 continue
             if att.size > settings.max_attachment_bytes:
-                return refused(
+                return as_result(refused(
                     f"{filename} is {att.size} bytes, over the "
                     f"{settings.max_attachment_bytes} byte limit."
-                )
-            return {
+                ))
+            data = {
                 "mailbox": box,
                 "filename": att.filename,
                 "content_type": att.content_type,
                 "size_bytes": att.size,
-                "base64": base64.b64encode(att.payload).decode(),
+                "format": format,
                 "UNTRUSTED_CONTENT_NOTE": render.UNTRUSTED_NOTE,
             }
-        return refused(f"No attachment named {filename!r} on uid {uid}.")
+            if format == "base64":
+                return as_result({**data, "base64": base64.b64encode(att.payload).decode()})
+            try:
+                found = await anyio.to_thread.run_sync(
+                    attachments.read, att.filename, att.content_type, att.payload,
+                    att.part.get_content_charset(), settings.max_attachment_text_chars,
+                )
+            except attachments.Unreadable as exc:
+                return as_result({
+                    **data,
+                    "readable": False,
+                    "detail": f'{exc} Use format="base64" to get the original file.',
+                })
+            limit = settings.max_attachment_text_chars
+            data.update({
+                "kind": found.kind,
+                "readable": True,
+                "text_chars": len(found.text),
+                **({} if found.complete else {"text_chars_exact": False}),
+                "truncated": len(found.text) > limit or not found.complete,
+                "text": f"--- BEGIN UNTRUSTED ATTACHMENT TEXT ---\n{found.text[:limit]}\n"
+                "--- END UNTRUSTED ATTACHMENT TEXT ---",
+                "images": len(found.images),
+            })
+            if found.pages is not None:
+                data["pages"] = found.pages
+            if found.notes:
+                data["notes"] = found.notes
+            if data["truncated"]:
+                total = f"{len(found.text)}" if found.complete else f"more than {len(found.text)}"
+                data["notes"] = data.get("notes", []) + [
+                    f"The text was cut at {limit} of {total} characters (MAX_ATTACHMENT_TEXT_CHARS)."
+                ]
+            return as_result(data, found.images)
+        return as_result(refused(f"No attachment named {filename!r} on uid {uid}."))
 
     # ---------------- mailbox writes ----------------
 

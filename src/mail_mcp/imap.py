@@ -22,6 +22,7 @@ from imap_tools import AND, MailBox, MailMessageFlags
 from imap_tools.errors import MailboxLoginError, UnexpectedCommandStatusError
 from imap_tools.utils import quote
 
+from .bodystructure import attachments_by_uid
 from .settings import Settings
 from .tls import client_context
 
@@ -267,6 +268,18 @@ class ImapClient:
                 if uid and stamp:
                     found[uid.group(1).decode()] = parsedate_to_datetime(stamp.group(1).decode())
             return found
+
+        return await self.run(op, folder)
+
+    async def attachment_names(self, folder: str, uids: list[str]) -> dict[str, list[str]]:
+        """The attachments of listed messages, from BODYSTRUCTURE: no body is downloaded and
+        nothing is marked read. A message the server did not describe is missing."""
+        if not uids:
+            return {}
+
+        def op(mb: MailBox) -> dict[str, list[str]]:
+            typ, data = mb.client.uid("FETCH", ",".join(uids), "(BODYSTRUCTURE)")
+            return attachments_by_uid(data) if typ == "OK" else {}
 
         return await self.run(op, folder)
 

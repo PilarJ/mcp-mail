@@ -167,6 +167,30 @@ others if you would rather not use GitHub; swapping is a one-line change in
 **Reading** — `mail_list`, `mail_search`, `mail_get`, `mail_get_thread`,
 `mail_get_attachment`
 
+`mail_list`, `mail_search` and `mail_get_thread` report `has_attachments`, the attachment names
+(`attachments`) and the real `size_bytes` from the server's `BODYSTRUCTURE` and `RFC822.SIZE`,
+without downloading a body. If the server does not describe a message, `has_attachments` is
+`null` (unknown), never a false "no". When `mail_get` cuts a long body (`body_truncated: true`),
+`body_chars` gives the full length.
+
+`mail_get_attachment` returns what a model can read (`format: "readable"`, the default):
+
+| Attachment | Result |
+|---|---|
+| PDF | Text page by page (`[Page 1]` ...) and `pages` with `has_text` per page. A page without text (a scan) is said to be one, and its picture (the largest image on the page) comes as image content |
+| PNG, JPEG, GIF, WebP, TIFF, BMP | Image content, first frame, upright, long edge at most 1568 px |
+| DOCX, XLSX, PPTX, ODT, ODS | Text; table rows as `cell \| cell` (documents) or tab-separated (sheets, one `## Sheet:` block each, numbers and dates as stored, e.g. Excel date serials) |
+| TXT, CSV, TSV, XML, JSON, ISDOC, HTML, EML | Text in the part's charset (UTF-8 or Windows-1250 otherwise); HTML without tags and scripts; an attached e-mail as its headers, body and attachment names |
+
+Text is framed like a body (`UNTRUSTED_CONTENT_NOTE`, BEGIN/END markers). Longer than
+`MAX_ATTACHMENT_TEXT_CHARS` it is cut and the result says `truncated: true`, `text_chars` (the full
+length) and a note. At most 20 pictures come back for one attachment; pages over that are listed in
+`notes`. HEIC pictures, password-protected PDFs, other formats (ZIP, executables ...) and damaged files
+give `readable: false` with a reason. `format: "base64"` returns the original bytes, for any type. Both
+modes keep `MAX_ATTACHMENT_BYTES`. Extraction runs inside the server process (pypdf, Pillow, the standard
+library with defusedxml): no network, no external service, no program started; an Office or OpenDocument
+file may unpack to at most 50 MB and a picture may have at most 60 megapixels.
+
 `mail_get` marks the message read, so the mailbox shows which mail has been handled.
 `MARK_SEEN_ON_GET=false` turns that off for the instance, and a call can override the
 instance either way with `mark_seen=true` or `mark_seen=false`. Nothing else marks mail read:
@@ -255,6 +279,7 @@ Note the `/mcp` suffix; the bare domain is not the endpoint.
 | `APPROVAL_TTL_HOURS` | How long a request stays valid; default 72 |
 | `APPROVAL_MAX_PER_HOUR` / `APPROVAL_MAX_PENDING` | Limits on requests to the approver; defaults 5 and 10 |
 | `MAX_BODY_CHARS` / `MAX_ATTACHMENT_BYTES` | Size caps on what is returned |
+| `MAX_ATTACHMENT_TEXT_CHARS` | Most text `mail_get_attachment` returns from one attachment; default 200000, longer text is cut with `truncated: true` |
 | `DATA_DIR` | Where the sent-mail audit log and the approval state live |
 
 ## Notes
