@@ -1,0 +1,46 @@
+#0 building with "colima" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.dovecot
+#1 transferring dockerfile: 494B 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/alpine:3.20
+#2 ...
+
+#3 [auth] library/alpine:pull token for registry-1.docker.io
+#3 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/alpine:3.20
+#2 DONE 0.8s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [1/4] FROM docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
+#5 resolve docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc 0.0s done
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 521B done
+#6 DONE 0.0s
+
+#7 [2/4] RUN apk add --no-cache dovecot openssl && adduser -D -u 5000 vmail && mkdir -p /home/vmail/Maildir/cur /home/vmail/Maildir/new /home/vmail/Maildir/tmp && chown -R vmail:vmail /home/vmail
+#7 CACHED
+
+#8 [3/4] RUN openssl req -x509 -newkey rsa:2048 -nodes -keyout /etc/dovecot/qa.key -out /etc/dovecot/qa.crt -days 2 -subj /CN=localhost -addext subjectAltName=DNS:localhost,IP:127.0.0.1
+#8 CACHED
+
+#9 [4/4] COPY dovecot.conf /etc/dovecot/dovecot.conf
+#9 CACHED
+
+#10 exporting to image
+#10 exporting layers
+#10 exporting layers done
+#10 exporting manifest sha256:9ab68202938b1713082c45c39e310826ed4b9a72ddbd3425c849178fde81b081 done
+#10 exporting config sha256:c656e1c25b30f226fe2cb45f2e99bc41822e3009a552db3fc05df93ba158f052 done
+#10 exporting attestation manifest sha256:1691020015437a521c55e95540f62e9b0585b1d82e3521a8a9dd6170ffde5b51 0.0s done
+#10 exporting manifest list sha256:d49557c6c4b9ba2e4c7ed04b9d3c6ceb116247f44557be54d3cf77b39d0f40e2 0.0s done
+#10 naming to docker.io/library/tester-mail14-dovecot-followup:latest done
+#10 unpacking to docker.io/library/tester-mail14-dovecot-followup:latest 0.0s done
+#10 DONE 0.1s

@@ -1,0 +1,50 @@
+PASS mail_list true status, exact names and MIME size
+PASS mail_search true status, exact names and MIME size
+FAIL české-stránky.pdf Czech text readable
+PASS three Czech PDF pages in order
+PASS české-stránky.pdf original bytes preserved
+PASS český-word.docx Czech text readable
+PASS český-word.docx original bytes preserved
+PASS český-excel.xlsx Czech text readable
+PASS český-excel.xlsx original bytes preserved
+PASS český-powerpoint.pptx Czech text readable
+PASS český-powerpoint.pptx original bytes preserved
+PASS český-dokument.odt Czech text readable
+PASS český-dokument.odt original bytes preserved
+PASS český-dokument.ods Czech text readable
+PASS český-dokument.ods original bytes preserved
+PASS česká-data.csv Czech text readable
+PASS česká-data.csv original bytes preserved
+PASS windows-1250.csv Czech text readable
+PASS windows-1250.csv original bytes preserved
+PASS česká-stránka.html Czech text readable
+PASS HTML script excluded
+PASS česká-stránka.html original bytes preserved
+PASS český-mail.eml Czech text readable
+PASS český-mail.eml original bytes preserved
+PASS česká-faktura.isdoc Czech text readable
+PASS česká-faktura.isdoc original bytes preserved
+PASS české-xml.xml Czech text readable
+PASS české-xml.xml original bytes preserved
+PASS české-json.json Czech text readable
+PASS české-json.json original bytes preserved
+PASS český-text.txt Czech text readable
+PASS český-text.txt original bytes preserved
+PASS obrázek.png returned as MCP image
+PASS obrázek.png original bytes preserved
+PASS sken.pdf returned as MCP image
+PASS sken.pdf original bytes preserved
+PASS dlouhý-text.txt Czech text readable
+PASS default 200000 character cap and notice
+PASS dlouhý-text.txt original bytes preserved
+EOF marker not found
+PASS poškozené.pdf readable error
+PASS poškozené.pdf server continues
+PASS poškozené.pdf original bytes preserved
+PASS nepodporovaný.zip readable error
+PASS nepodporovaný.zip server continues
+PASS nepodporovaný.zip original bytes preserved
+PASS whole Czech mail body readable
+PASS configured 97 character cap and notice
+PASS message remains unread
+TOTAL 47/48

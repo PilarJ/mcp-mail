@@ -1,0 +1,1 @@
+{"headRefOid":"12c554f5abe89e30980d5399e1e28329ee3942de","labels":[],"state":"OPEN","statusCheckRollup":[{"__typename":"CheckRun","completedAt":"2026-11-19T14:34:46Z","conclusion":"SUCCESS","detailsUrl":"https://github.com/PilarJ/mcp-mail/actions/runs/44545018692/job/135633152978","name":"pytest","startedAt":"2026-11-19T14:33:26Z","status":"COMPLETED","workflowName":"test"}]}

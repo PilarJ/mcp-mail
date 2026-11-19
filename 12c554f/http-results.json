@@ -1,0 +1,20 @@
+[
+  {
+    "path": "/",
+    "status": 404,
+    "expected": 404,
+    "pass": true
+  },
+  {
+    "path": "/mcp",
+    "status": 401,
+    "expected": 401,
+    "pass": true
+  },
+  {
+    "path": "/.well-known/oauth-protected-resource/mcp",
+    "status": 200,
+    "expected": 200,
+    "pass": true
+  }
+]

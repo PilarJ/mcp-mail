@@ -1,0 +1,5 @@
+FROM alpine:3.20
+RUN apk add --no-cache dovecot openssl && adduser -D -u 5000 vmail && mkdir -p /home/vmail/Maildir/cur /home/vmail/Maildir/new /home/vmail/Maildir/tmp && chown -R vmail:vmail /home/vmail
+RUN openssl req -x509 -newkey rsa:2048 -nodes -keyout /etc/dovecot/qa.key -out /etc/dovecot/qa.crt -days 2 -subj /CN=localhost -addext subjectAltName=DNS:localhost,IP:127.0.0.1
+COPY dovecot.conf /etc/dovecot/dovecot.conf
+CMD ["dovecot", "-F"]

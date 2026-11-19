@@ -1,0 +1,50 @@
+[
+  {
+    "revision": "acb569b",
+    "path": "/",
+    "status": 404,
+    "expected": 404,
+    "pass": true,
+    "body": "<!doctype html><meta charset=utf-8><title>Mail MCP server</title><body style='font-family:system-ui;max-width:40em;margin:4em auto'><h1>Mail MCP server</h1><p>This is an MCP server. The endpoint is <code>http://localhost:19925/mcp</code> \u2014 configure your client with that full URL, including the <code>/mcp</code> suffix.</p></body>"
+  },
+  {
+    "revision": "acb569b",
+    "path": "/mcp",
+    "status": 401,
+    "expected": 401,
+    "pass": true,
+    "body": ""
+  },
+  {
+    "revision": "acb569b",
+    "path": "/.well-known/oauth-protected-resource/mcp",
+    "status": 200,
+    "expected": 200,
+    "pass": true,
+    "body": "{\"resource\":\"http://localhost:19925/mcp\",\"authorization_servers\":[\"http://localhost:19925/\"],\"scopes_supported\":[\"user\"],\"bearer_methods_supported\":[\"header\"]}"
+  },
+  {
+    "revision": "4b4a04b",
+    "path": "/",
+    "status": 404,
+    "expected": 404,
+    "pass": true,
+    "body": "<!doctype html><meta charset=utf-8><title>Mail MCP server</title><body style='font-family:system-ui;max-width:40em;margin:4em auto'><h1>Mail MCP server</h1><p>This is an MCP server. The endpoint is <code>http://localhost:19926/mcp</code> \u2014 configure your client with that full URL, including the <code>/mcp</code> suffix.</p></body>"
+  },
+  {
+    "revision": "4b4a04b",
+    "path": "/mcp",
+    "status": 401,
+    "expected": 401,
+    "pass": true,
+    "body": ""
+  },
+  {
+    "revision": "4b4a04b",
+    "path": "/.well-known/oauth-protected-resource/mcp",
+    "status": 200,
+    "expected": 200,
+    "pass": true,
+    "body": "{\"resource\":\"http://localhost:19926/mcp\",\"authorization_servers\":[\"http://localhost:19926/\"],\"scopes_supported\":[\"user\"],\"bearer_methods_supported\":[\"header\"]}"
+  }
+]

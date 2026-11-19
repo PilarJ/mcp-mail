@@ -1,0 +1,27 @@
+Using CPython 3.12.16 interpreter at: /opt/homebrew/opt/python@3.12/bin/python3.12
+Creating virtual environment at: .venv
+   Building mcp-mail @ file:///Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa14-4b4a04b-followup
+      Built mcp-mail @ file:///Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa14-4b4a04b-followup
+Installed 72 packages in 49ms
+/Users/pilarj/.cache/uv/archive-v0/WUaH8wsxMR46FEHR/lib/python3.12/site-packages/pytest_asyncio/plugin.py:306: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to "function" scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session". Set it to "fixture-scope" to keep the current behavior.
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+........................................................................ [  9%]
+........................................................................ [ 19%]
+........................................................................ [ 29%]
+........................................................................ [ 39%]
+........................................................................ [ 49%]
+........................................................................ [ 59%]
+........................................................................ [ 69%]
+........................................................................ [ 79%]
+........................................................................ [ 88%]
+........................................................................ [ 98%]
+.........                                                                [100%]
+=============================== warnings summary ===============================
+tests/test_approval.py::test_main_exits_on_a_bad_approver_and_names_no_address
+  /Users/pilarj/.dodaios/data/society/tester/workspace/repos/mcp-mail-qa14-4b4a04b-followup/.venv/lib/python3.12/site-packages/authlib/integrations/httpx_client/assertion_client.py:5: AuthlibDeprecationWarning: The httpx module is deprecated; please use httpx2 instead.
+    from ._compat import httpx2
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+729 passed, 1 warning in 39.74s

@@ -1,0 +1,43 @@
+/usr/local/lib/python3.12/site-packages/authlib/integrations/httpx_client/assertion_client.py:5: AuthlibDeprecationWarning: The httpx module is deprecated; please use httpx2 instead.
+  from ._compat import httpx2
+2026-11-19 14:34:28,890 WARNING mail_mcp.server: ALLOWED_RECIPIENTS is empty — sending is disabled for qa@example.test. Reading and drafting still work.
+[11/19/26 14:34:28] WARNING  Using non-secure cookies for           proxy.py:549
+                             development; deploy with HTTPS for                 
+                             production.                                        
+2026-11-19 14:34:28,906 INFO mail_mcp.server: Serving MCP for qa@example.test at http://localhost:19925/mcp
+2026-11-19 14:34:29,030 INFO httpx: HTTP Request: GET https://pypi.org/pypi/fastmcp/json "HTTP/1.1 200 OK"
+
+
+╭──────────────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│                                                                              │
+│                         ▄▀▀ ▄▀█ █▀▀ ▀█▀ █▀▄▀█ █▀▀ █▀█                        │
+│                         █▀  █▀█ ▄▄█  █  █ ▀ █ █▄▄ █▀▀                        │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                FastMCP 3.4.11                                │
+│                            https://gofastmcp.com                             │
+│                                                                              │
+│                 🖥  Server:      mail-qa-example-test, 3.4.11                 │
+│                 🚀 Deploy free: https://horizon.prefect.io                   │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────────────────────╮
+│                          🎉 Update available: 4.2.2                          │
+│                      Run: pip install --upgrade fastmcp                      │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+[11/19/26 14:34:29] INFO     Starting MCP server                transport.py:361
+                             'mail-qa-example-test' with                        
+                             transport 'http' on                                
+                             http://0.0.0.0:8000/mcp                            
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+2026-11-19 14:34:29,114 INFO mcp.server.streamable_http_manager: StreamableHTTP session manager started
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     172.17.0.1:41664 - "GET / HTTP/1.1" 404 Not Found
+INFO:     172.17.0.1:41672 - "GET /mcp HTTP/1.1" 401 Unauthorized
+INFO:     172.17.0.1:41682 - "GET /.well-known/oauth-protected-resource/mcp HTTP/1.1" 200 OK

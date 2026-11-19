@@ -1,0 +1,106 @@
+{
+  "source": "/usr/local/lib/python3.12/site-packages/mail_mcp/__init__.py",
+  "dependencies": {
+    "pypdf": "7.1.1",
+    "pillow": "13.0.0",
+    "defusedxml": "0.7.1",
+    "fastmcp": "3.4.11"
+  },
+  "checks": [
+    {
+      "name": "dlouhý-text.txt",
+      "pass": true,
+      "kind": "text"
+    },
+    {
+      "name": "nepodporovaný.zip",
+      "pass": true,
+      "detail": "application/zip is not a format this server can read."
+    },
+    {
+      "name": "obrázek.png",
+      "pass": true,
+      "kind": "image"
+    },
+    {
+      "name": "poškozené.pdf",
+      "pass": true,
+      "detail": "The PDF file could not be read; it may be damaged."
+    },
+    {
+      "name": "sken.pdf",
+      "pass": true,
+      "kind": "pdf"
+    },
+    {
+      "name": "windows-1250.csv",
+      "pass": true,
+      "kind": "text"
+    },
+    {
+      "name": "česká-data.csv",
+      "pass": true,
+      "kind": "text"
+    },
+    {
+      "name": "česká-faktura.isdoc",
+      "pass": true,
+      "kind": "text"
+    },
+    {
+      "name": "česká-stránka.html",
+      "pass": true,
+      "kind": "html"
+    },
+    {
+      "name": "české-json.json",
+      "pass": true,
+      "kind": "text"
+    },
+    {
+      "name": "české-stránky-opravené.pdf",
+      "pass": true,
+      "kind": "pdf"
+    },
+    {
+      "name": "české-xml.xml",
+      "pass": true,
+      "kind": "text"
+    },
+    {
+      "name": "český-dokument.ods",
+      "pass": true,
+      "kind": "ods"
+    },
+    {
+      "name": "český-dokument.odt",
+      "pass": true,
+      "kind": "odt"
+    },
+    {
+      "name": "český-excel.xlsx",
+      "pass": true,
+      "kind": "xlsx"
+    },
+    {
+      "name": "český-mail.eml",
+      "pass": true,
+      "kind": "eml"
+    },
+    {
+      "name": "český-powerpoint.pptx",
+      "pass": true,
+      "kind": "pptx"
+    },
+    {
+      "name": "český-text.txt",
+      "pass": true,
+      "kind": "text"
+    },
+    {
+      "name": "český-word.docx",
+      "pass": true,
+      "kind": "docx"
+    }
+  ]
+}

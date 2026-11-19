@@ -1,0 +1,21 @@
+From: sender@example.test
+To: qa@example.test
+Subject: QA attached message
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============1186017681621049538=="
+
+--===============1186017681621049538==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+QA inner body 014
+
+--===============1186017681621049538==
+Content-Type: application/octet-stream
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="inner.txt"
+MIME-Version: 1.0
+
+aW5uZXIgZmlsZSAwMTQ=
+
+--===============1186017681621049538==--

@@ -1,0 +1,28 @@
+[
+  {
+    "name": "unclosed_script",
+    "bytes": 1600000,
+    "seconds": 0.04273579199798405,
+    "output_chars": 0,
+    "pass": true
+  },
+  {
+    "name": "unclosed_style",
+    "bytes": 1400000,
+    "seconds": 0.03723408401128836,
+    "output_chars": 0,
+    "pass": true
+  },
+  {
+    "name": "unclosed_tags",
+    "bytes": 1500000,
+    "seconds": 0.02527137499419041,
+    "output_chars": 1500000,
+    "pass": true
+  },
+  {
+    "name": "Czech HTML content survives script and style stripping",
+    "pass": true,
+    "actual": "Český text\nDruhá část"
+  }
+]

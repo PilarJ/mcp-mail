@@ -1,0 +1,1 @@
+{"revision": "4b4a04b", "checks": [{"name": "independent PDF writer/reader preserves all Czech glyphs", "pass": true}, {"name": "actual MCP preserves Czech text on all three PDF pages", "pass": true}, {"name": "all three PDF page labels and source order retained", "pass": true}, {"name": "Czech PDF base64 is byte-identical", "pass": true}], "bytes": 11285}

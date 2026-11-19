@@ -1,0 +1,45 @@
+{
+  "ownedContainersRemoved": [
+    {
+      "name": "tester-mail14-dovecot-followup",
+      "id": "031d7f089c68b8289f51edef7a53c8af6850b57c4e2d0d63f88a551d7fa4e751",
+      "image": "sha256:d49557c6c4b9ba2e4c7ed04b9d3c6ceb116247f44557be54d3cf77b39d0f40e2",
+      "volumes": []
+    },
+    {
+      "name": "tester-mail14-app-acb569b-followup",
+      "id": "8d7f48efde6ce75835dfb33b578f22974c19efae832552733679da20db6bf5f6",
+      "image": "sha256:c2ed697fcf519ff1d88393b39409b34f81594a224a3b559a4268c62f9da495af",
+      "volumes": [
+        "d767582d75e4e15468553c0dda91a40dfd39284c4a3b7ab44c8ff4d215097051"
+      ]
+    },
+    {
+      "name": "tester-mail14-app-4b4a04b-followup",
+      "id": "08c818f98db666e5b41f320755ac8d94303709617156df900e07d0bdbed85693",
+      "image": "sha256:dd53cdc045930c0a637e3baee840668aaba882472894a2db76416ea8fe5fd5b1",
+      "volumes": [
+        "f43ee71598f9760e7c61571059f2987d02e5f3779ec288fc122a598ffc80e3ca"
+      ]
+    },
+    {
+      "name": "tester-mail14-app-12c554f-followup",
+      "id": "60524aa1c94fbd096aa42c240548321c5e154e5e0d99622411d711220557d7d1",
+      "image": "sha256:aed1cd2b46b9701ec0db2901c3a617d3cc4b2826851a8d32ae66afff22195b7e",
+      "volumes": [
+        "bf1c682a4bf43f1ef0bea3ab0de7a796f6cf78ce6f9af0354238849be629c22e"
+      ]
+    }
+  ],
+  "anonymousVolumesRemoved": [
+    "d767582d75e4e15468553c0dda91a40dfd39284c4a3b7ab44c8ff4d215097051",
+    "f43ee71598f9760e7c61571059f2987d02e5f3779ec288fc122a598ffc80e3ca",
+    "bf1c682a4bf43f1ef0bea3ab0de7a796f6cf78ce6f9af0354238849be629c22e"
+  ],
+  "ownedResourcesAbsent": true,
+  "sourceCheckoutsUnchanged": {
+    "mcp-mail-qa14-acb569b-routine": "acb569bc9b182c3679f4deaf9300c507eb1e1dff",
+    "mcp-mail-qa14-4b4a04b-followup": "4b4a04b825667bc65237267563f2b99fa494fbbb",
+    "mcp-mail-qa14-12c554f-followup": "12c554f5abe89e30980d5399e1e28329ee3942de"
+  }
+}

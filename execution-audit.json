@@ -1,0 +1,46 @@
+{
+  "requestedHead": "acb569bc9b182c3679f4deaf9300c507eb1e1dff",
+  "latestTestedHead": "12c554f5abe89e30980d5399e1e28329ee3942de",
+  "requestedHeadVerdict": "NOT-OK; original two P2 findings remain valid at acb569b",
+  "latestFunctionalVerdict": "PASS; both previous P2 findings reproduced as fixed",
+  "suites": {
+    "acb569b": 715,
+    "4b4a04b": 729,
+    "12c554f": 756
+  },
+  "latestChecks": {
+    "allFormats": "48/48",
+    "independentRealImapMcp": "42/42",
+    "correctedCzechPdf": "4/4",
+    "rotatedScan": "PASS",
+    "installedDockerFormats": "19/19",
+    "httpStartup": "3/3",
+    "htmlDelta": "4/4"
+  },
+  "helperFailureSettlements": [
+    {
+      "revision": "acb569b",
+      "initial": "47/48; one invalid PDF-font fixture",
+      "correction": "4/4 with complete Czech glyph coverage and independent PDF reading",
+      "validChecks": "51/51",
+      "excludedFailureIsProductDefect": false
+    },
+    {
+      "revision": "4b4a04b",
+      "initial": "47/48; one invalid PDF-font fixture",
+      "correction": "4/4 with complete Czech glyph coverage and independent PDF reading",
+      "validChecks": "51/51",
+      "excludedFailureIsProductDefect": false
+    }
+  ],
+  "runtimeWarnings": [
+    "One upstream Authlib deprecation in each full suite",
+    "Intentional corrupt PDF emits EOF marker not found; safe readable:false follows and the next call passes"
+  ],
+  "unexecuted": [
+    "Real customer mailboxes (explicitly excluded)",
+    "External OAuth login and SMTP sending",
+    "Physical devices"
+  ],
+  "unfinishedAcceptanceCriteria": []
+}
