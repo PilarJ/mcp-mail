@@ -222,13 +222,20 @@ def _too_big(width: int, height: int) -> Unreadable | None:
     return None
 
 
-def _picture(img: Image.Image) -> tuple[bytes, str]:
-    """A picture the model can look at: first frame, upright, long edge at most MAX_IMAGE_EDGE."""
+# A PDF page's /Rotate turns it clockwise for display; Pillow's ROTATE_* turn counterclockwise.
+_PAGE_TURN = {90: Image.Transpose.ROTATE_270, 180: Image.Transpose.ROTATE_180, 270: Image.Transpose.ROTATE_90}
+
+
+def _picture(img: Image.Image, rotate: int = 0) -> tuple[bytes, str]:
+    """A picture the model can look at: first frame, upright, long edge at most MAX_IMAGE_EDGE.
+    rotate is the clockwise turn of the PDF page the picture fills (/Rotate)."""
     if error := _too_big(img.width, img.height):
         raise error
     if getattr(img, "n_frames", 1) > 1:
         img.seek(0)
     img = ImageOps.exif_transpose(img)
+    if turn := _PAGE_TURN.get(rotate % 360):
+        img = img.transpose(turn)
     img.thumbnail((MAX_IMAGE_EDGE, MAX_IMAGE_EDGE))
     alpha = img.mode in ("RGBA", "LA", "PA") or (img.mode == "P" and "transparency" in img.info)
     if img.mode.startswith("I") or img.mode == "F":
@@ -280,13 +287,22 @@ def _pdf(payload: bytes, out: _Out) -> Readable:
                 notes.append(f"Page {number} has no text and no picture this server can extract.")
                 continue
             try:
-                images.append(_picture(scan))
+                images.append(_picture(scan, _page_rotation(page)))
                 entry["image"] = True
             except Unreadable as exc:
                 notes.append(f"Page {number}: {exc}")
     except _Full:
         pass
     return Readable("pdf", text=out.text(), images=images, pages=pages, notes=notes, complete=not out.full)
+
+
+def _page_rotation(page) -> int:
+    """The page's /Rotate, a multiple of 90 degrees clockwise; anything else counts as 0."""
+    try:
+        rotate = int(page.get("/Rotate", 0))
+    except Exception:
+        return 0
+    return rotate % 360 if rotate % 90 == 0 else 0
 
 
 def _largest_image(page) -> Image.Image | None:
@@ -451,11 +467,32 @@ def _xlsx(z: _Zip, out: _Out) -> None:
         out.line("")
 
 
-def _pptx(z: _Zip, out: _Out) -> None:
-    slides = sorted(
-        (int(m.group(1)), name) for name in z.names() if (m := re.fullmatch(r"ppt/slides/slide(\d+)\.xml", name))
+def _slide_order(z: _Zip) -> list[str]:
+    """The slides as the presentation shows them: p:sldIdLst in ppt/presentation.xml through its
+    relationships. The file names (slide1.xml ...) keep the order slides were made in, so they
+    are used only when the presentation has no slide list."""
+    names = set(z.names())
+    numbered = sorted(
+        (int(m.group(1)), name) for name in names if (m := re.fullmatch(r"ppt/slides/slide(\d+)\.xml", name))
     )
-    for number, name in slides:
+    by_name = [name for _number, name in numbered]
+    presentation = z.xml("ppt/presentation.xml", required=False) if "ppt/presentation.xml" in names else None
+    rels = z.xml("ppt/_rels/presentation.xml.rels", required=False) if presentation is not None else None
+    if presentation is None or rels is None:
+        return by_name
+    targets = {rel.get("Id"): rel.get("Target", "") for rel in rels}
+    shown: list[str] = []
+    for slide in _all(presentation, "sldId"):
+        rid = next((value for key, value in slide.attrib.items() if _local(key) == "id" and key.startswith("{")), None)
+        target = targets.get(rid, "")
+        path = target.lstrip("/") if target.startswith("/") else os.path.normpath("ppt/" + target).replace(os.sep, "/")
+        if target and path in names and path not in shown:
+            shown.append(path)
+    return shown or by_name
+
+
+def _pptx(z: _Zip, out: _Out) -> None:
+    for number, name in enumerate(_slide_order(z), start=1):
         out.line(f"## Slide {number}")
         for p in _all(z.xml(name), "p"):
             text = "".join(t.text or "" for t in p.iter() if _local(t.tag) == "t")

@@ -639,3 +639,54 @@ def test_pillow_is_required_in_a_version_with_the_13_0_fixes():
 
     project = tomllib.loads((pathlib.Path(__file__).parents[1] / "pyproject.toml").read_text())["project"]
     assert "pillow>=13,<14" in project["dependencies"]
+
+
+# ---------------------------------------------------------------- QA review 5976717712
+
+
+def test_pptx_slides_come_in_the_order_the_presentation_shows():
+    """The second slide was dragged before the first: slide2.xml is shown first."""
+    from mail_mcp import attachments
+
+    p = 'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+    a = 'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"'
+    r = 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"'
+    slide = lambda text: f"<p:sld {p} {a}><p:cSld><p:spTree><p:sp><p:txBody><a:p><a:r><a:t>{text}</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>"  # noqa: E731
+    deck = zipped({
+        "ppt/presentation.xml": f'<p:presentation {p} {r}><p:sldIdLst><p:sldId id="257" r:id="rId8"/><p:sldId id="256" r:id="rId7"/></p:sldIdLst></p:presentation>',
+        "ppt/_rels/presentation.xml.rels": (
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId7" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/>'
+            '<Relationship Id="rId8" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="/ppt/slides/slide2.xml"/>'
+            "</Relationships>"
+        ),
+        "ppt/slides/slide1.xml": slide("Original first"),
+        "ppt/slides/slide2.xml": slide("Moved to first"),
+    })
+    found = attachments.read("deck.pptx", "application/octet-stream", deck)
+    assert found.text == "## Slide 1\nMoved to first\n\n## Slide 2\nOriginal first"
+
+
+@pytest.mark.parametrize(("rotate", "upright"), [(90, (200, 300)), (180, (300, 200)), (270, (200, 300)), (-90, (200, 300))])
+def test_a_scan_on_a_rotated_page_comes_back_upright(rotate, upright):
+    """A scanner stores the picture sideways and turns the page with /Rotate; the model must
+    see the page as a PDF viewer shows it."""
+    from pypdf import PdfReader, PdfWriter
+
+    from mail_mcp import attachments
+
+    sideways = Image.new("RGB", (300, 200), "white")
+    sideways.paste((200, 30, 30), (0, 0, 30, 30))  # red corner: top left as stored
+    buf = io.BytesIO()
+    sideways.save(buf, "PDF")
+    writer = PdfWriter(clone_from=PdfReader(io.BytesIO(buf.getvalue())))
+    writer.pages[0].rotate(rotate)
+    out = io.BytesIO()
+    writer.write(out)
+    found = attachments.read("scan.pdf", "application/pdf", out.getvalue())
+    returned = Image.open(io.BytesIO(found.images[0][0]))
+    assert returned.size == upright
+    red = {90: (returned.width - 15, 15), 180: (returned.width - 15, returned.height - 15),
+           270: (15, returned.height - 15), -90: (15, returned.height - 15)}[rotate]  # where a viewer shows the corner
+    r, g, b = returned.convert("RGB").getpixel(red)
+    assert r > 150 and g < 100 and b < 100, (r, g, b)
