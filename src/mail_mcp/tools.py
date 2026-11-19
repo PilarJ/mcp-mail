@@ -337,7 +337,8 @@ def register(
                 return as_result({**data, "base64": base64.b64encode(att.payload).decode()})
             try:
                 found = await anyio.to_thread.run_sync(
-                    attachments.read, att.filename, att.content_type, att.payload, att.part.get_content_charset()
+                    attachments.read, att.filename, att.content_type, att.payload,
+                    att.part.get_content_charset(), settings.max_attachment_text_chars,
                 )
             except attachments.Unreadable as exc:
                 return as_result({
@@ -350,7 +351,8 @@ def register(
                 "kind": found.kind,
                 "readable": True,
                 "text_chars": len(found.text),
-                "truncated": len(found.text) > limit,
+                **({} if found.complete else {"text_chars_exact": False}),
+                "truncated": len(found.text) > limit or not found.complete,
                 "text": f"--- BEGIN UNTRUSTED ATTACHMENT TEXT ---\n{found.text[:limit]}\n"
                 "--- END UNTRUSTED ATTACHMENT TEXT ---",
                 "images": len(found.images),
@@ -360,8 +362,9 @@ def register(
             if found.notes:
                 data["notes"] = found.notes
             if data["truncated"]:
+                total = f"{len(found.text)}" if found.complete else f"more than {len(found.text)}"
                 data["notes"] = data.get("notes", []) + [
-                    f"The text was cut at {limit} of {len(found.text)} characters (MAX_ATTACHMENT_TEXT_CHARS)."
+                    f"The text was cut at {limit} of {total} characters (MAX_ATTACHMENT_TEXT_CHARS)."
                 ]
             return as_result(data, found.images)
         return as_result(refused(f"No attachment named {filename!r} on uid {uid}."))

@@ -494,3 +494,59 @@ def test_a_picture_with_too_many_pixels_is_refused_before_it_is_decoded(monkeypa
     monkeypatch.setattr(attachments, "MAX_IMAGE_PIXELS", 1000)
     with pytest.raises(attachments.Unreadable, match="too big"):
         attachments.read("p.png", "image/png", png(100, 100))
+
+
+def test_shared_strings_cannot_multiply_the_text_of_a_sheet():
+    from mail_mcp import attachments
+
+    main = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
+    rel = 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"'
+    row = "".join(f'<c t="s"><v>0</v></c>' for _ in range(1000))
+    bomb = zipped({
+        "xl/workbook.xml": f'<workbook {main} {rel}><sheets><sheet name="S" sheetId="1" r:id="rId1"/></sheets></workbook>',
+        "xl/_rels/workbook.xml.rels": '<Relationships><Relationship Id="rId1" Target="worksheets/sheet1.xml"/></Relationships>',
+        "xl/sharedStrings.xml": f"<sst {main}><si><t>{'x' * 10_000}</t></si></sst>",
+        "xl/worksheets/sheet1.xml": f"<worksheet {main}><sheetData>{'<row>' + row + '</row>' * 1}" + ("<row>" + row + "</row>") * 200 + "</sheetData></worksheet>",
+    })
+    found = attachments.read("b.xlsx", "application/octet-stream", bomb, max_chars=100)  # 2 billion characters unbounded
+    assert found.complete is False and len(found.text) <= 1_000_000
+
+
+def test_repeated_cells_and_rows_cannot_multiply_the_text_of_an_ods():
+    from mail_mcp import attachments
+
+    ns = ('xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" '
+          'xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" '
+          'xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"')
+    cell = f'<table:table-cell table:number-columns-repeated="1000"><text:p>{"y" * 10_000}</text:p></table:table-cell>'
+    rows = f'<table:table-row table:number-rows-repeated="1000">{cell}</table:table-row>' * 50
+    bomb = zipped({"content.xml": (
+        f"<office:document-content {ns}><office:body><office:spreadsheet>"
+        f'<table:table table:name="T">{rows}</table:table></office:spreadsheet></office:body></office:document-content>'
+    )})
+    found = attachments.read("b.ods", "application/octet-stream", bomb, max_chars=100)
+    assert found.complete is False and len(found.text) <= 1_000_000
+
+
+async def test_a_long_document_past_the_extraction_cap_says_its_length_is_not_exact(tmp_path, monkeypatch, server):
+    from mail_mcp import attachments
+
+    real = attachments.read
+    monkeypatch.setattr(attachments, "read", lambda *a, **k: attachments.Readable("pdf", text="z" * 50, complete=False))
+    result = await call(tmp_path, "mail_get_attachment", {"uid": "7", "filename": "faktura.pdf"}, MAX_ATTACHMENT_TEXT_CHARS="20")
+    data = result.structured_content
+    assert data["truncated"] is True and data["text_chars_exact"] is False
+    assert "more than 50" in data["notes"][-1]
+    monkeypatch.setattr(attachments, "read", real)
+
+
+def test_a_scan_bigger_than_the_pixel_cap_is_not_decoded(monkeypatch):
+    from mail_mcp import attachments
+
+    monkeypatch.setattr(attachments, "MAX_IMAGE_PIXELS", 1000)
+    decoded = []
+    monkeypatch.setattr(attachments, "_picture", lambda img: decoded.append(img))
+    found = attachments.read("s.pdf", "application/pdf", scanned_pdf())
+    assert found.images == [] and decoded == []
+    assert found.pages == [{"page": 1, "has_text": False, "image": False}]
+    assert "1240 x 1754 pixels, too big" in found.notes[0]

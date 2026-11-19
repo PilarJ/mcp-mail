@@ -7,8 +7,9 @@ process: no network, no external service, no program started.
 
 The files were written by whoever sent the mail. Parsing is bounded: the attachment size limit
 applies before anything here runs, a ZIP container (Office, OpenDocument) may unpack to at most
-MAX_UNZIPPED_BYTES, pictures to at most MAX_IMAGE_PIXELS, and only the picture formats listed
-in IMAGE_FORMATS are opened. A file that cannot be read gives Unreadable with a sentence of
+MAX_UNZIPPED_BYTES, pictures to at most MAX_IMAGE_PIXELS (checked on the declared size, before
+decoding), only the picture formats listed in IMAGE_FORMATS are opened, and extracted text stops
+growing at the caller's cap (shared strings and repeated cells cannot multiply it). A file that cannot be read gives Unreadable with a sentence of
 ours, never the library's text.
 """
 
@@ -38,6 +39,7 @@ MAX_IMAGE_EDGE = 1568  # long edge of a returned picture, in pixels
 MAX_IMAGES = 20  # pictures returned for one attachment (scanned PDF pages)
 MAX_IMAGE_PIXELS = 60_000_000  # bigger pictures are refused before they are decoded
 MAX_UNZIPPED_BYTES = 50_000_000  # what an Office or OpenDocument file may unpack to
+MAX_PDF_PAGES = 1000  # pages read from one PDF
 IMAGE_FORMATS = ("PNG", "JPEG", "GIF", "WEBP", "TIFF", "BMP")
 
 KINDS_BY_EXTENSION = {
@@ -76,6 +78,39 @@ class Readable:
     images: list[tuple[bytes, str]] = field(default_factory=list)  # (data, mime type)
     pages: list[dict] | None = None
     notes: list[str] = field(default_factory=list)
+    complete: bool = True  # False: extraction stopped at the text cap, text holds what came before
+
+
+class _Full(Exception):
+    """The extracted text reached its cap."""
+
+
+class _Out:
+    """Extracted lines, at most `cap` characters: lines past it are not built at all."""
+
+    def __init__(self, cap: int) -> None:
+        self.lines: list[str] = []
+        self.left = cap
+        self.full = False
+
+    def reserve(self, size: int) -> None:
+        """Account for text about to be built; stops extraction once the cap is passed."""
+        if size > self.left:
+            self.full = True
+            raise _Full
+        self.left -= size
+
+    def line(self, text: str) -> None:
+        if len(text) + 1 > self.left:  # keep what fits, so one huge page still shows its start
+            self.lines.append(text[: max(self.left, 0)])
+            self.left = 0
+            self.full = True
+            raise _Full
+        self.left -= len(text) + 1
+        self.lines.append(text)
+
+    def text(self) -> str:
+        return _lines("\n".join(self.lines))
 
 
 def kind_of(filename: str, content_type: str, payload: bytes) -> str | None:
@@ -92,7 +127,11 @@ def kind_of(filename: str, content_type: str, payload: bytes) -> str | None:
     return None
 
 
-def read(filename: str, content_type: str, payload: bytes, charset: str | None = None) -> Readable:
+def read(filename: str, content_type: str, payload: bytes, charset: str | None = None, max_chars: int = 200_000) -> Readable:
+    """The attachment as text and pictures. Text extraction stops at ten times max_chars (at
+    least a million characters; complete is then False), so a file cannot multiply its text
+    without bound, and a normal file still gets its exact length."""
+    cap = max(10 * max_chars, 1_000_000)
     kind = kind_of(filename, content_type, payload)
     if kind is None:
         raise Unreadable(f"{content_type or 'This file type'} is not a format this server can read.")
@@ -100,11 +139,16 @@ def read(filename: str, content_type: str, payload: bytes, charset: str | None =
         raise Unreadable("HEIC pictures cannot be converted on this server.")
     try:
         if kind == "pdf":
-            return _pdf(payload)
+            return _pdf(payload, _Out(cap))
         if kind == "image":
             return Readable(kind, images=[_picture(_open_image(payload))])
         if kind in ("docx", "xlsx", "pptx", "odt", "ods"):
-            return Readable(kind, text=_ZIPPED[kind](_Zip(payload)))
+            out = _Out(cap)
+            try:
+                _ZIPPED[kind](_Zip(payload), out)
+            except _Full:
+                pass
+            return Readable(kind, text=out.text(), complete=not out.full)
         if kind == "html":
             return Readable(kind, text=html_to_text(_decode(payload, charset)))
         if kind == "eml":
@@ -131,7 +175,7 @@ def _decode(payload: bytes, charset: str | None) -> str:
             continue
     else:
         text = payload.decode("latin-1")
-    return _lines(text.lstrip("﻿"))
+    return _lines(text.lstrip("\ufeff"))
 
 
 def _lines(text: str) -> str:
@@ -165,10 +209,16 @@ def _open_image(payload: bytes) -> Image.Image:
     return img
 
 
+def _too_big(width: int, height: int) -> Unreadable | None:
+    if width * height > MAX_IMAGE_PIXELS:
+        return Unreadable(f"The picture is {width} x {height} pixels, too big to convert.")
+    return None
+
+
 def _picture(img: Image.Image) -> tuple[bytes, str]:
     """A picture the model can look at: first frame, upright, long edge at most MAX_IMAGE_EDGE."""
-    if img.width * img.height > MAX_IMAGE_PIXELS:
-        raise Unreadable(f"The picture is {img.width} x {img.height} pixels, too big to convert.")
+    if error := _too_big(img.width, img.height):
+        raise error
     if getattr(img, "n_frames", 1) > 1:
         img.seek(0)
     img = ImageOps.exif_transpose(img)
@@ -187,54 +237,72 @@ def _picture(img: Image.Image) -> tuple[bytes, str]:
 # ---------------------------------------------------------------- PDF
 
 
-def _pdf(payload: bytes) -> Readable:
+def _pdf(payload: bytes, out: _Out) -> Readable:
     reader = PdfReader(io.BytesIO(payload))
     if reader.is_encrypted and not reader.decrypt(""):
         raise Unreadable("The PDF is protected by a password.")
-    parts: list[str] = []
     pages: list[dict] = []
     images: list[tuple[bytes, str]] = []
     notes: list[str] = []
-    for number, page in enumerate(reader.pages, start=1):
-        try:
-            text = _lines(page.extract_text() or "")
-        except Exception:
-            text = ""
-        if text:
-            parts.append(f"[Page {number}]\n{text}")
-            pages.append({"page": number, "has_text": True})
-            continue
-        parts.append(f"[Page {number}: no text layer, probably a scan]")
-        entry = {"page": number, "has_text": False}
-        scan = _largest_image(page)
-        if scan is None:
-            entry["image"] = False
-            notes.append(f"Page {number} has no text and no picture this server can extract.")
-        elif len(images) >= MAX_IMAGES:
-            entry["image"] = False
-            notes.append(f"Page {number} has no text; its picture was not returned, at most {MAX_IMAGES} pictures are.")
-        else:
+    count = len(reader.pages)
+    if count > MAX_PDF_PAGES:
+        notes.append(f"The PDF has {count} pages; only the first {MAX_PDF_PAGES} were read.")
+    try:
+        for number in range(1, min(count, MAX_PDF_PAGES) + 1):
+            page = reader.pages[number - 1]
+            try:
+                text = _lines(page.extract_text() or "")
+            except Exception:
+                text = ""
+            if text:
+                out.line(f"[Page {number}]\n{text}\n")
+                pages.append({"page": number, "has_text": True})
+                continue
+            out.line(f"[Page {number}: no text layer, probably a scan]\n")
+            entry = {"page": number, "has_text": False, "image": False}
+            pages.append(entry)
+            if len(images) >= MAX_IMAGES:
+                notes.append(f"Page {number} has no text; its picture was not returned, at most {MAX_IMAGES} pictures are.")
+                continue
+            try:
+                scan = _largest_image(page)
+            except Unreadable as exc:
+                notes.append(f"Page {number}: {exc}")
+                continue
+            if scan is None:
+                notes.append(f"Page {number} has no text and no picture this server can extract.")
+                continue
             try:
                 images.append(_picture(scan))
                 entry["image"] = True
             except Unreadable as exc:
-                entry["image"] = False
                 notes.append(f"Page {number}: {exc}")
-        pages.append(entry)
-    return Readable("pdf", text="\n\n".join(parts), images=images, pages=pages, notes=notes)
+    except _Full:
+        pass
+    return Readable("pdf", text=out.text(), images=images, pages=pages, notes=notes, complete=not out.full)
 
 
 def _largest_image(page) -> Image.Image | None:
-    """The biggest picture on a page: a scanner puts the whole page into one."""
-    best = None
+    """The biggest picture placed on a page: a scanner puts the whole page into one. Sizes are
+    compared as the PDF declares them, and only the chosen picture is decoded."""
     try:
-        for found in page.images:
-            img = found.image
-            if img is not None and (best is None or img.width * img.height > best.width * best.height):
-                best = img
+        xobjects = page["/Resources"]["/XObject"].get_object()
+        declared = []
+        for name, ref in xobjects.items():
+            obj = ref.get_object()
+            if obj.get("/Subtype") == "/Image":
+                declared.append((int(obj.get("/Width", 0)) * int(obj.get("/Height", 0)), name, obj))
     except Exception:
-        return best
-    return best
+        return None
+    if not declared:
+        return None
+    _area, name, obj = max(declared, key=lambda item: item[0])
+    if error := _too_big(int(obj.get("/Width", 0)), int(obj.get("/Height", 0))):
+        raise error
+    try:
+        return page.images[name].image
+    except Exception:
+        return None
 
 
 # ---------------------------------------------------------------- Office and OpenDocument
@@ -296,26 +364,24 @@ def _word_paragraph(p: ET.Element) -> str:
     return "".join(out)
 
 
-def _docx(z: _Zip) -> str:
+def _docx(z: _Zip, out: _Out) -> None:
     body = next(_all(z.xml("word/document.xml"), "body"), None)
-    lines: list[str] = []
 
     def block(el: ET.Element) -> None:
         name = _local(el.tag)
         if name == "p":
-            lines.append(_word_paragraph(el))
+            out.line(_word_paragraph(el))
         elif name == "tbl":
             for row in _children(el, "tr"):
                 cells = [" ".join(_word_paragraph(p) for p in _all(cell, "p")).strip() for cell in _children(row, "tc")]
-                lines.append(" | ".join(cells))
-            lines.append("")
+                out.line(" | ".join(cells))
+            out.line("")
         elif name in ("sdt", "sdtContent", "customXml"):
             for child in el:
                 block(child)
 
     for el in body if body is not None else []:
         block(el)
-    return _lines("\n".join(lines))
 
 
 _CELL = re.compile(r"([A-Z]+)")
@@ -331,7 +397,7 @@ def _column(ref: str | None) -> int | None:
     return number - 1
 
 
-def _xlsx(z: _Zip) -> str:
+def _xlsx(z: _Zip, out: _Out) -> None:
     shared = []
     strings = z.xml("xl/sharedStrings.xml", required=False)
     for si in _children(strings, "si") if strings is not None else []:
@@ -339,7 +405,6 @@ def _xlsx(z: _Zip) -> str:
     workbook = z.xml("xl/workbook.xml")
     rels = z.xml("xl/_rels/workbook.xml.rels", required=False)
     targets = {rel.get("Id"): rel.get("Target", "") for rel in (rels if rels is not None else [])}
-    lines: list[str] = []
     for sheet in _all(workbook, "sheet"):
         rid = next((value for key, value in sheet.attrib.items() if _local(key) == "id"), None)
         target = targets.get(rid, "")
@@ -347,9 +412,10 @@ def _xlsx(z: _Zip) -> str:
         data = z.xml(path, required=False) if target else None
         if data is None:
             continue
-        lines.append(f"## Sheet: {sheet.get('name', '')}")
+        out.line(f"## Sheet: {sheet.get('name', '')}")
         for row in _all(data, "row"):
             cells: list[str] = []
+            size = 0
             for cell in _children(row, "c"):
                 value = next(iter(_children(cell, "v")), None)
                 kind = cell.get("t")
@@ -365,29 +431,30 @@ def _xlsx(z: _Zip) -> str:
                 else:
                     text = value.text or "" if value is not None else ""
                 column = _column(cell.get("r"))
-                if column is not None and len(cells) < column <= len(cells) + 1000:
-                    cells += [""] * (column - len(cells))
+                pad = column - len(cells) if column is not None and len(cells) < column <= len(cells) + 1000 else 0
+                # A shared string can be used by any number of cells: count it each time.
+                size += pad + len(text) + 1
+                if size > out.left:
+                    out.reserve(size)
+                cells += [""] * pad
                 cells.append(text)
             line = "\t".join(cells).rstrip("\t")
             if line:
-                lines.append(line)
-        lines.append("")
-    return _lines("\n".join(lines))
+                out.line(line)
+        out.line("")
 
 
-def _pptx(z: _Zip) -> str:
+def _pptx(z: _Zip, out: _Out) -> None:
     slides = sorted(
         (int(m.group(1)), name) for name in z.names() if (m := re.fullmatch(r"ppt/slides/slide(\d+)\.xml", name))
     )
-    lines: list[str] = []
     for number, name in slides:
-        lines.append(f"## Slide {number}")
+        out.line(f"## Slide {number}")
         for p in _all(z.xml(name), "p"):
             text = "".join(t.text or "" for t in p.iter() if _local(t.tag) == "t")
             if text.strip():
-                lines.append(text)
-        lines.append("")
-    return _lines("\n".join(lines))
+                out.line(text)
+        out.line("")
 
 
 def _odf_text(el: ET.Element) -> str:
@@ -419,47 +486,58 @@ def _repeat(el: ET.Element, attribute: str) -> int:
         return 1
 
 
-def _odf_rows(table: ET.Element, separator: str) -> list[str]:
-    lines = []
-    for row in _all(table, "table-row"):
+def _odf_row_elements(el: ET.Element):
+    """The rows of one table, not those of tables nested in its cells."""
+    for child in el:
+        name = _local(child.tag)
+        if name == "table-row":
+            yield child
+        elif name in ("table-rows", "table-header-rows", "table-row-group"):
+            yield from _odf_row_elements(child)
+
+
+def _odf_rows(table: ET.Element, separator: str, out: _Out) -> None:
+    for row in _odf_row_elements(table):
         cells: list[str] = []
+        size = 0
         for cell in row:
             if _local(cell.tag) not in ("table-cell", "covered-table-cell"):
                 continue
             text = "\n".join(_odf_text(p) for p in _children(cell, "p")).strip()
-            cells += [text] * _repeat(cell, "number-columns-repeated")
+            repeat = _repeat(cell, "number-columns-repeated")
+            size += (len(text) + len(separator)) * repeat
+            if size > out.left:
+                out.reserve(size)
+            cells += [text] * repeat
         while cells and not cells[-1]:
             cells.pop()
         if cells:
-            lines += [separator.join(cells)] * _repeat(row, "number-rows-repeated")
-    return lines
+            line = separator.join(cells)
+            for _ in range(_repeat(row, "number-rows-repeated")):
+                out.line(line)
 
 
-def _odt(z: _Zip) -> str:
-    lines: list[str] = []
-
+def _odt(z: _Zip, out: _Out) -> None:
     def block(el: ET.Element) -> None:
         for child in el:
             name = _local(child.tag)
             if name in ("p", "h"):
-                lines.append(_odf_text(child))
+                out.line(_odf_text(child))
             elif name == "table":
-                lines.extend(_odf_rows(child, " | "))
-                lines.append("")
+                _odf_rows(child, " | ", out)
+                out.line("")
             elif name in ("list", "list-item", "section", "text", "body"):
                 block(child)
 
     block(z.xml("content.xml"))
-    return _lines("\n".join(lines))
 
 
-def _ods(z: _Zip) -> str:
-    lines: list[str] = []
-    for table in _all(z.xml("content.xml"), "table"):
-        lines.append(f"## Sheet: {table.get(_TABLE + 'name', '')}")
-        lines.extend(_odf_rows(table, "\t"))
-        lines.append("")
-    return _lines("\n".join(lines))
+def _ods(z: _Zip, out: _Out) -> None:
+    for spreadsheet in _all(z.xml("content.xml"), "spreadsheet"):
+        for table in _children(spreadsheet, "table"):
+            out.line(f"## Sheet: {table.get(_TABLE + 'name', '')}")
+            _odf_rows(table, "\t", out)
+            out.line("")
 
 
 _ZIPPED = {"docx": _docx, "xlsx": _xlsx, "pptx": _pptx, "odt": _odt, "ods": _ods}
