@@ -488,6 +488,30 @@ def test_an_office_file_that_unpacks_too_far_is_refused(monkeypatch):
         attachments.read("x.docx", "application/octet-stream", zipped({"word/document.xml": big}))
 
 
+@pytest.mark.parametrize("over", [1, 1_000_000], ids=["just over", "1 MB over"])
+def test_an_office_file_whose_xml_unpacks_past_10_mb_is_refused(over):
+    # Security review of 12c554f: the whole XML part is parsed in memory, so 50 MB of
+    # small elements cost several hundred MB of RAM. The real cap, not a patched one.
+    from mail_mcp import attachments
+
+    head = f"<w:document {W}><w:body><w:p><w:r><w:t>"
+    tail = "</w:t></w:r></w:p></w:body></w:document>"
+    big = head + "a" * (10_000_000 + over - len(head) - len(tail)) + tail
+    assert len(big) == 10_000_000 + over
+    with pytest.raises(attachments.Unreadable, match="unpacks to more"):
+        attachments.read("x.docx", "application/octet-stream", zipped({"word/document.xml": big}))
+
+
+def test_an_office_file_whose_xml_is_just_under_10_mb_is_still_read():
+    from mail_mcp import attachments
+
+    head = f"<w:document {W}><w:body><w:p><w:r><w:t>"
+    tail = "</w:t></w:r></w:p></w:body></w:document>"
+    big = head + "a" * (10_000_000 - len(head) - len(tail)) + tail
+    readable = attachments.read("x.docx", "application/octet-stream", zipped({"word/document.xml": big}))
+    assert readable.text.startswith("aaaa")
+
+
 def test_a_picture_with_too_many_pixels_is_refused_before_it_is_decoded(monkeypatch):
     from mail_mcp import attachments
 

@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 MAX_IMAGE_EDGE = 1568  # long edge of a returned picture, in pixels
 MAX_IMAGES = 20  # pictures returned for one attachment (scanned PDF pages)
 MAX_IMAGE_PIXELS = 60_000_000  # bigger pictures are refused before they are decoded
-MAX_UNZIPPED_BYTES = 50_000_000  # what an Office or OpenDocument file may unpack to
+MAX_UNZIPPED_BYTES = 10_000_000  # what an Office or OpenDocument file may unpack to
 MAX_PDF_PAGES = 1000  # pages read from one PDF
 IMAGE_FORMATS = ("PNG", "JPEG", "GIF", "WEBP", "TIFF", "BMP")
 
