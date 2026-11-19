@@ -550,3 +550,92 @@ def test_a_scan_bigger_than_the_pixel_cap_is_not_decoded(monkeypatch):
     assert found.images == [] and decoded == []
     assert found.pages == [{"page": 1, "has_text": False, "image": False}]
     assert "1240 x 1754 pixels, too big" in found.notes[0]
+
+
+# ---------------------------------------------------------------- security review 5976588156
+
+
+ODF = ('xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" '
+       'xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" '
+       'xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"')
+
+
+def odf(kind: str, body: str) -> bytes:
+    content = f"<office:spreadsheet>{body}</office:spreadsheet>" if kind == "ods" else f"<office:text>{body}</office:text>"
+    return zipped({"content.xml": f"<office:document-content {ODF}><office:body>{content}</office:body></office:document-content>"})
+
+
+@pytest.mark.parametrize("kind", ["ods", "odt"])
+def test_the_reviewed_repeat_bomb_gives_cut_text_in_little_memory(kind):
+    """The file from the review: 500 rows repeated 100 times, 10 cells repeated 100 times each.
+    Unbounded it is 3.5 kB that builds more than 1 GB of text and 2 GB of memory."""
+    import tracemalloc
+
+    from mail_mcp import attachments
+
+    cell = '<table:table-cell table:number-columns-repeated="100"><text:p>repeated cell text 1</text:p></table:table-cell>'
+    rows = f'<table:table-row table:number-rows-repeated="100">{cell * 10}</table:table-row>' * 500
+    bomb = odf(kind, f'<table:table table:name="T">{rows}</table:table>')
+    assert len(bomb) < 4_000
+    tracemalloc.start()
+    try:
+        found = attachments.read(f"b.{kind}", "application/octet-stream", bomb)  # MAX_ATTACHMENT_TEXT_CHARS default
+        peak = tracemalloc.get_traced_memory()[1]
+    finally:
+        tracemalloc.stop()
+    assert peak < 100_000_000, f"{peak / 1e6:.0f} MB"
+    assert found.complete is False and 0 < len(found.text) <= 2_000_000
+
+
+@pytest.mark.parametrize("kind", ["ods", "odt"])
+def test_repeated_spaces_are_not_built_past_the_cap(monkeypatch, kind):
+    """text:s stands for up to 100 spaces: 3 million characters here, in one cell of thirty
+    paragraphs (ODS) or in one paragraph (ODT)."""
+    from mail_mcp import attachments
+
+    if kind == "ods":
+        paragraphs = ('<text:p>a' + '<text:s text:c="100"/>' * 1000 + 'b</text:p>') * 30
+        body = f'<table:table table:name="T"><table:table-row><table:table-cell>{paragraphs}</table:table-cell></table:table-row></table:table>'
+    else:
+        body = '<text:p>a' + '<text:s text:c="100"/>' * 30_000 + 'b</text:p>'
+
+    built: list[int] = []
+    real = attachments._odf_text
+    monkeypatch.setattr(attachments, "_odf_text", lambda *a, **k: built.append(len(text := real(*a, **k))) or text)
+    found = attachments.read(f"s.{kind}", "application/octet-stream", odf(kind, body), max_chars=100)  # cap 1 million
+    assert found.complete is False
+    assert sum(built) <= 1_000_000 + 1_000, sum(built)
+
+
+@pytest.mark.parametrize(("filename", "content_type", "payload"), [
+    ("big.txt", "text/plain", b"a" * 1_500_000),
+    ("big.html", "text/html", b"<p>" + b"b" * 1_500_000 + b"</p>"),
+    ("big.eml", "message/rfc822", b"From: a@example.test\r\nSubject: x\r\n\r\n" + b"c" * 1_500_000),
+])
+def test_text_html_and_mail_attachments_stop_at_the_cap(filename, content_type, payload):
+    from mail_mcp import attachments
+
+    found = attachments.read(filename, content_type, payload, max_chars=100)  # cap 1 million
+    assert found.complete is False and 0 < len(found.text) <= 1_000_000
+
+
+def test_pages_past_the_picture_limit_are_not_decoded(monkeypatch):
+    from mail_mcp import attachments
+
+    buf = io.BytesIO()
+    picture(200, 300).save(buf, "PDF", save_all=True, append_images=[picture(200, 300), picture(200, 300)])
+    monkeypatch.setattr(attachments, "MAX_IMAGES", 1)
+    looked = []
+    real = attachments._largest_image
+    monkeypatch.setattr(attachments, "_largest_image", lambda page: looked.append(page) or real(page))
+    found = attachments.read("s.pdf", "application/pdf", buf.getvalue())
+    assert len(found.images) == 1 and len(looked) == 1
+    assert [p["image"] for p in found.pages] == [True, False, False]
+
+
+def test_pillow_is_required_in_a_version_with_the_13_0_fixes():
+    import pathlib
+    import tomllib
+
+    project = tomllib.loads((pathlib.Path(__file__).parents[1] / "pyproject.toml").read_text())["project"]
+    assert "pillow>=13,<14" in project["dependencies"]

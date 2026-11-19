@@ -9,7 +9,7 @@ The files were written by whoever sent the mail. Parsing is bounded: the attachm
 applies before anything here runs, a ZIP container (Office, OpenDocument) may unpack to at most
 MAX_UNZIPPED_BYTES, pictures to at most MAX_IMAGE_PIXELS (checked on the declared size, before
 decoding), only the picture formats listed in IMAGE_FORMATS are opened, and extracted text stops
-growing at the caller's cap (shared strings and repeated cells cannot multiply it). A file that cannot be read gives Unreadable with a sentence of
+growing at the caller's cap (shared strings, repeated cells and repeated spaces cannot multiply it). A file that cannot be read gives Unreadable with a sentence of
 ours, never the library's text.
 """
 
@@ -128,8 +128,8 @@ def kind_of(filename: str, content_type: str, payload: bytes) -> str | None:
 
 
 def read(filename: str, content_type: str, payload: bytes, charset: str | None = None, max_chars: int = 200_000) -> Readable:
-    """The attachment as text and pictures. Text extraction stops at ten times max_chars (at
-    least a million characters; complete is then False), so a file cannot multiply its text
+    """The attachment as text and pictures. Text of every format stops at ten times max_chars
+    (at least a million characters; complete is then False), so a file cannot multiply its text
     without bound, and a normal file still gets its exact length."""
     cap = max(10 * max_chars, 1_000_000)
     kind = kind_of(filename, content_type, payload)
@@ -150,10 +150,10 @@ def read(filename: str, content_type: str, payload: bytes, charset: str | None =
                 pass
             return Readable(kind, text=out.text(), complete=not out.full)
         if kind == "html":
-            return Readable(kind, text=html_to_text(_decode(payload, charset)))
+            return _capped(kind, html_to_text(_decode(payload, charset)), cap)
         if kind == "eml":
-            return Readable(kind, text=_eml(payload))
-        return Readable(kind, text=_decode(payload, charset))
+            return _capped(kind, _eml(payload), cap)
+        return _capped(kind, _decode(payload, charset), cap)
     except Unreadable:
         raise
     except Exception as exc:  # a damaged file: the parser's own text stays out of the result
@@ -162,6 +162,13 @@ def read(filename: str, content_type: str, payload: bytes, charset: str | None =
 
 
 # ---------------------------------------------------------------- text
+
+
+def _capped(kind: str, text: str, cap: int) -> Readable:
+    """Text of a format read whole (no ZIP, no repeats, so it is no longer than the file)."""
+    if len(text) > cap:
+        return Readable(kind, text=text[:cap], complete=False)
+    return Readable(kind, text=text)
 
 
 def _decode(payload: bytes, charset: str | None) -> str:
@@ -457,22 +464,38 @@ def _pptx(z: _Zip, out: _Out) -> None:
         out.line("")
 
 
-def _odf_text(el: ET.Element) -> str:
-    out = [el.text or ""]
-    for child in el:
-        name = _local(child.tag)
-        if name == "s":
-            try:
-                out.append(" " * min(int(child.get("{urn:oasis:names:tc:opendocument:xmlns:text:1.0}c", "1")), 100))
-            except ValueError:
-                out.append(" ")
-        elif name == "tab":
-            out.append("\t")
-        elif name == "line-break":
-            out.append("\n")
-        elif name not in ("annotation", "note-citation"):
-            out.append(_odf_text(child))
-        out.append(child.tail or "")
+def _odf_text(el: ET.Element, limit: int) -> str:
+    """The text of a paragraph, built only until it is longer than limit: a text:s element
+    stands for up to 100 spaces, so a short paragraph can mean a long text."""
+    out: list[str] = []
+    size = 0
+
+    def add(text: str) -> None:
+        nonlocal size
+        if size <= limit:
+            out.append(text)
+            size += len(text)
+
+    def walk(node: ET.Element) -> None:
+        add(node.text or "")
+        for child in node:
+            if size > limit:
+                return
+            name = _local(child.tag)
+            if name == "s":
+                try:
+                    add(" " * min(int(child.get("{urn:oasis:names:tc:opendocument:xmlns:text:1.0}c", "1")), 100))
+                except ValueError:
+                    add(" ")
+            elif name == "tab":
+                add("\t")
+            elif name == "line-break":
+                add("\n")
+            elif name not in ("annotation", "note-citation"):
+                walk(child)
+            add(child.tail or "")
+
+    walk(el)
     return "".join(out)
 
 
@@ -503,7 +526,14 @@ def _odf_rows(table: ET.Element, separator: str, out: _Out) -> None:
         for cell in row:
             if _local(cell.tag) not in ("table-cell", "covered-table-cell"):
                 continue
-            text = "\n".join(_odf_text(p) for p in _children(cell, "p")).strip()
+            paragraphs: list[str] = []
+            left = out.left - size
+            for p in _children(cell, "p"):
+                paragraphs.append(_odf_text(p, left))
+                left -= len(paragraphs[-1]) + 1
+                if left < 0:  # the cell alone is longer than what is left: the row does not fit
+                    out.reserve(out.left + 1)
+            text = "\n".join(paragraphs).strip()
             repeat = _repeat(cell, "number-columns-repeated")
             size += (len(text) + len(separator)) * repeat
             if size > out.left:
@@ -522,7 +552,7 @@ def _odt(z: _Zip, out: _Out) -> None:
         for child in el:
             name = _local(child.tag)
             if name in ("p", "h"):
-                out.line(_odf_text(child))
+                out.line(_odf_text(child, out.left))
             elif name == "table":
                 _odf_rows(child, " | ", out)
                 out.line("")
