@@ -21,15 +21,56 @@ UNTRUSTED_NOTE = (
 _TAG_RE = re.compile(r"<[^>]+>")
 _BREAK_RE = re.compile(r"<br\s*/?>", re.IGNORECASE)
 _BLOCK_END_RE = re.compile(r"</(p|div|h[1-6]|li|tr|table)\s*>", re.IGNORECASE)
-_SCRIPT_RE = re.compile(r"<(script|style)[^>]*>.*?</\1>", re.IGNORECASE | re.DOTALL)
+_SCRIPT_START_RE = re.compile(r"<(script|style)", re.IGNORECASE)
+_SCRIPT_END_RE = {name: re.compile(rf"</{name}>", re.IGNORECASE) for name in ("script", "style")}
 _WS_RE = re.compile(r"\n{3,}")
 
 
+def _drop_scripts(html: str) -> str:
+    """Remove <script>/<style> elements in one pass over the text.
+
+    Same result as the regex <(script|style)[^>]*>.*?</\\1>, which on unclosed elements
+    scanned to the end of the text from every opening (quadratic time on hostile mail).
+    Once an element has no closing tag after some point, no later one can have it either.
+    """
+    out, kept_from, search_from = [], 0, 0
+    closable = {"script", "style"}
+    while closable:
+        start = _SCRIPT_START_RE.search(html, search_from)
+        if start is None:
+            break
+        name = start.group(1).lower()
+        search_from = start.end()
+        if name not in closable:
+            continue
+        gt = html.find(">", start.end())
+        if gt < 0:
+            break
+        end = _SCRIPT_END_RE[name].search(html, gt + 1)
+        if end is None:
+            closable.discard(name)
+            continue
+        out.append(html[kept_from:start.start()])
+        kept_from = search_from = end.end()
+    out.append(html[kept_from:])
+    return "".join(out)
+
+
+def _drop_tags(text: str) -> str:
+    """Same as _TAG_RE.sub("", text), in linear time.
+
+    After the last '>' no tag can end, and the regex scanned to the end of the text from
+    every '<' there; it only runs up to that '>'.
+    """
+    end = text.rfind(">") + 1
+    return _TAG_RE.sub("", text[:end]) + text[end:]
+
+
 def html_to_text(html: str) -> str:
-    text = _SCRIPT_RE.sub("", html or "")
+    text = _drop_scripts(html or "")
     text = _BREAK_RE.sub("\n", text)
     text = _BLOCK_END_RE.sub("\n", text)
-    text = _TAG_RE.sub("", text)
+    text = _drop_tags(text)
     for entity, char in (
         ("&nbsp;", " "), ("&amp;", "&"), ("&lt;", "<"),
         ("&gt;", ">"), ("&quot;", '"'), ("&#39;", "'"),
