@@ -318,7 +318,8 @@ def register(
         and the result then says truncated: true with the full length in text_chars."""
         msg = await imap.get_message(folder, uid, mark_seen=False)
         for att in msg.attachments:
-            if att.filename != filename:
+            # mail_get shows names without Tag characters, so they are compared without them.
+            if render.clean(att.filename) != render.clean(filename):
                 continue
             if att.size > settings.max_attachment_bytes:
                 return as_result(refused(
@@ -334,27 +335,27 @@ def register(
                 "UNTRUSTED_CONTENT_NOTE": render.UNTRUSTED_NOTE,
             }
             if format == "base64":
-                return as_result({**data, "base64": base64.b64encode(att.payload).decode()})
+                return as_result(render.clean({**data, "base64": base64.b64encode(att.payload).decode()}))
             try:
                 found = await anyio.to_thread.run_sync(
                     attachments.read, att.filename, att.content_type, att.payload,
                     att.part.get_content_charset(), settings.max_attachment_text_chars,
                 )
             except attachments.Unreadable as exc:
-                return as_result({
+                return as_result(render.clean({
                     **data,
                     "readable": False,
                     "detail": f'{exc} Use format="base64" to get the original file.',
-                })
+                }))
             limit = settings.max_attachment_text_chars
+            text = render.clean(found.text)
             data.update({
                 "kind": found.kind,
                 "readable": True,
-                "text_chars": len(found.text),
+                "text_chars": len(text),
                 **({} if found.complete else {"text_chars_exact": False}),
-                "truncated": len(found.text) > limit or not found.complete,
-                "text": f"--- BEGIN UNTRUSTED ATTACHMENT TEXT ---\n{found.text[:limit]}\n"
-                "--- END UNTRUSTED ATTACHMENT TEXT ---",
+                "truncated": len(text) > limit or not found.complete,
+                "text": render.frame("ATTACHMENT TEXT", text[:limit]),
                 "images": len(found.images),
             })
             if found.pages is not None:
@@ -362,11 +363,11 @@ def register(
             if found.notes:
                 data["notes"] = found.notes
             if data["truncated"]:
-                total = f"{len(found.text)}" if found.complete else f"more than {len(found.text)}"
+                total = f"{len(text)}" if found.complete else f"more than {len(text)}"
                 data["notes"] = data.get("notes", []) + [
                     f"The text was cut at {limit} of {total} characters (MAX_ATTACHMENT_TEXT_CHARS)."
                 ]
-            return as_result(data, found.images)
+            return as_result(render.clean(data), found.images)
         return as_result(refused(f"No attachment named {filename!r} on uid {uid}."))
 
     # ---------------- mailbox writes ----------------
@@ -510,7 +511,7 @@ def register(
         headers = msg.headers
         to = list(msg.reply_to) or [msg.from_]
         cc = list(msg.cc) if reply_all else []
-        subject = msg.subject or ""
+        subject = render.clean(msg.subject or "")
         if not subject.lower().startswith("re:"):
             subject = f"Re: {subject}"
         return await _deliver(
