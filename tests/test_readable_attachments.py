@@ -285,8 +285,9 @@ async def attachment(tmp_path, filename: str, **arguments):
 
 def unframed(data: dict) -> str:
     text = data["text"]
-    assert text.startswith("--- BEGIN UNTRUSTED ATTACHMENT TEXT ---\n"), text[:80]
-    assert text.endswith("\n--- END UNTRUSTED ATTACHMENT TEXT ---"), text[-80:]
+    begin = re.match(r"--- BEGIN UNTRUSTED ATTACHMENT TEXT ([0-9a-f]{16}) ---\n", text)
+    assert begin, text[:80]
+    assert text.endswith(f"\n--- END UNTRUSTED ATTACHMENT TEXT {begin.group(1)} ---"), text[-80:]
     return text.split("\n", 1)[1].rsplit("\n", 1)[0]
 
 
