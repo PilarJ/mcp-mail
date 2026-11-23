@@ -189,7 +189,7 @@ length) and a note. At most 20 pictures come back for one attachment; pages over
 give `readable: false` with a reason. `format: "base64"` returns the original bytes, for any type. Both
 modes keep `MAX_ATTACHMENT_BYTES`. Extraction runs inside the server process (pypdf, Pillow, the standard
 library with defusedxml): no network, no external service, no program started; an Office or OpenDocument
-file may unpack to at most 50 MB and a picture may have at most 60 megapixels.
+file may unpack to at most 10 MB and a picture may have at most 60 megapixels.
 
 `mail_get` marks the message read, so the mailbox shows which mail has been handled.
 `MARK_SEEN_ON_GET=false` turns that off for the instance, and a call can override the
