@@ -8,9 +8,10 @@ the recipient allowlist first.
 from __future__ import annotations
 
 import logging
+import re
 import smtplib
 from email.message import EmailMessage
-from email.utils import formataddr, formatdate, make_msgid
+from email.utils import formataddr, formatdate, make_msgid, parseaddr
 
 import anyio
 
@@ -19,6 +20,11 @@ from .settings import Settings
 from .tls import client_context
 
 logger = logging.getLogger(__name__)
+
+# Used when the sender has no usable domain. Anything but socket.getfqdn(), which is what
+# make_msgid() falls back to and which leaks the container or internal host name.
+MESSAGE_ID_FALLBACK_DOMAIN = "localhost"
+_HOSTNAME_RE = re.compile(r"(?=.{1,253}$)(?!-)[a-z0-9-]{1,63}(?<!-)(\.(?!-)[a-z0-9-]{1,63}(?<!-))*")
 
 
 class SendError(RuntimeError):
@@ -54,6 +60,19 @@ def smtp_failure(exc: BaseException) -> SendError:
     return SendError(f"{text} ({code})", code=code, source=type(exc).__name__)
 
 
+def message_id_domain(sender: str) -> str:
+    """The domain for our Message-ID: the sender's, as an ASCII host name, or a safe fallback."""
+    _, address = parseaddr(sender)
+    _, at, domain = address.rpartition("@")
+    if not at:
+        return MESSAGE_ID_FALLBACK_DOMAIN
+    try:
+        domain = domain.strip().rstrip(".").encode("idna").decode("ascii").lower()
+    except UnicodeError:
+        return MESSAGE_ID_FALLBACK_DOMAIN
+    return domain if _HOSTNAME_RE.fullmatch(domain) else MESSAGE_ID_FALLBACK_DOMAIN
+
+
 def build_message(
     settings: Settings,
     to: list[str],
@@ -74,7 +93,7 @@ def build_message(
         msg["Cc"] = ", ".join(cc)
     msg["Subject"] = subject
     msg["Date"] = formatdate(localtime=True)
-    msg["Message-ID"] = make_msgid()
+    msg["Message-ID"] = make_msgid(domain=message_id_domain(settings.smtp_user))
     if in_reply_to:
         msg["In-Reply-To"] = in_reply_to
         # Keeping References intact is what makes clients thread the reply.

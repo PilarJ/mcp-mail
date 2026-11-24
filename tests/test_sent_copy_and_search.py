@@ -200,7 +200,7 @@ async def test_without_sent_folder_no_copy_is_filed(tmp_path, world, smtp_sent):
     assert "sent_copy" not in result
 
 
-# make_msgid() builds the Message-ID from the time, the process id, a random number and the host's name.
+# make_msgid() builds the Message-ID from the time, the process id, a random number and the sender domain.
 # When "Message-ID: <id>" is longer than 78 characters but the id alone fits on a line, the e-mail
 # generator folds the header onto two lines (RFC 5322 allows it). The length depends on the machine and
 # on chance, which is why this test failed on some CI runs and passed on a re-run (issue #8).
@@ -210,7 +210,7 @@ FOLDED_ID = "<179482928533.2478.7478108949779100895@build-host-01.ci.example.tes
 
 @pytest.mark.parametrize("message_id", [SHORT_ID, FOLDED_ID])
 async def test_mail_send_saves_a_copy_in_sent_folder(tmp_path, world, smtp_sent, monkeypatch, message_id):
-    monkeypatch.setattr(smtp_module, "make_msgid", lambda: message_id)
+    monkeypatch.setattr(smtp_module, "make_msgid", lambda **_: message_id)
     result = await call(tmp_path, "mail_send", SEND, SENT_FOLDER="Odeslane")
     assert result["status"] == "sent"
     assert len(smtp_sent) == 1
