@@ -23,7 +23,9 @@ SPOOF = f'"{RECIPIENT}" <{ATTACKER}>'
 
 
 def rcpt(commands: list[str]) -> list[str]:
-    return [c for c in commands if c.lower().startswith("rcpt")]
+    # SMTP verbs are case-insensitive (RFC 5321); Python 3.15 smtplib sends "rcpt to:".
+    # Normalise only the verb, so the address is still compared exactly.
+    return [c[:8].upper() + c[8:] for c in commands if c.lower().startswith("rcpt")]
 
 
 def assert_nothing_happened(harness) -> None:
@@ -99,7 +101,7 @@ async def test_the_real_envelope_of_an_approved_send_has_one_rcpt(harness):
     harness.approve(pending)
     commands = harness.capture_envelope()
     assert (await harness.send(pending))["status"] == "sent"
-    assert rcpt(commands) == [f"rcpt TO:<{RECIPIENT}>"]
+    assert rcpt(commands) == [f"RCPT TO:<{RECIPIENT}>"]
 
 
 # ---------------------------------------------------------------- sending something else
