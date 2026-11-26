@@ -19,3 +19,11 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
       - run: pytest -v --tb=short
+
+  image-user:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: docker build -t mcp-mail:ci .
+      - run: scripts/check-image-user.sh mcp-mail:ci

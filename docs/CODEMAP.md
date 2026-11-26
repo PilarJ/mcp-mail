@@ -10,13 +10,14 @@ GitHub OAuth controls who can connect, and server-side recipient rules control w
 | [`src/mail_mcp/`](../src/mail_mcp/) | The installable Python package, including MCP tools, mailbox protocols, configuration and policy. |
 | [`tests/`](../tests/) | Pytest coverage, protocol fakes, shared fixtures and wire-level test support. |
 | [`.github/workflows/`](../.github/workflows/) | The GitHub Actions test workflow for pull requests and pushes to `main`. |
+| [`scripts/`](../scripts/) | Repository checks run by CI, such as the container runtime-user check. |
 | [`docs/`](.) | Repository navigation and developer reference. The [README](../README.md) covers setup, configuration and tool behavior. |
 
 ## Entry points
 
 - [`pyproject.toml`](../pyproject.toml) declares Python 3.12 or newer, the runtime dependencies, the `dev` test extras and the `mail-mcp` console script. The script calls `mail_mcp.server:main`.
 - [`server.py`](../src/mail_mcp/server.py) is the startup entry point for the FastMCP server and GitHub OAuth configuration. MCP clients use `<BASE_URL>/mcp`. The GitHub OAuth app uses `<BASE_URL>/auth/callback`. Set `BASE_URL` to the client-reachable URL without a trailing slash.
-- [`Dockerfile`](../Dockerfile) installs the package into a Python 3.12 slim image, runs `mail-mcp`, exposes port 8000 and uses `/data` for persistent state.
+- [`Dockerfile`](../Dockerfile) installs the package into a Python 3.12 slim image, runs `mail-mcp` as `app` (UID/GID 10001), exposes port 8000 and uses `/data` for persistent state.
 
 ## Where to make changes
 
@@ -55,7 +56,14 @@ pip install -e ".[dev]"
 pytest -v --tb=short
 ```
 
-The last two commands are the ones in [the test workflow](../.github/workflows/test.yml). CI runs on Ubuntu with a ten-minute job timeout. The suite uses fakes for IMAP, SMTP and DNS, with real TLS over loopback for certificate tests. It needs no Docker service, live mailbox or OAuth credentials.
+The last two commands are the ones in [the test workflow](../.github/workflows/test.yml). CI runs on Ubuntu with a ten-minute job timeout. A second CI job builds the image and runs [`check-image-user.sh`](../scripts/check-image-user.sh), which fails unless the container runs as UID/GID 10001 and can write `/data` and `/data/fastmcp`. Run it locally with:
+
+```bash
+DOCKER_CONTEXT=colima-qa docker build -t mcp-mail-codemap-qa .
+DOCKER_CONTEXT=colima-qa scripts/check-image-user.sh mcp-mail-codemap-qa
+```
+
+The pytest suite uses fakes for IMAP, SMTP and DNS, with real TLS over loopback for certificate tests. It needs no Docker service, live mailbox or OAuth credentials.
 
 ## Gotchas
 

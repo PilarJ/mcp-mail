@@ -11,8 +11,10 @@ COPY src ./src
 RUN pip install --no-cache-dir .
 
 # Run as an unprivileged user. /data must exist and be owned by it before the
-# VOLUME line so fresh named volumes inherit that ownership.
-RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin app \
+# VOLUME line so fresh named volumes inherit that ownership. The group gets an
+# explicit GID: a --system user would otherwise get one from the system range.
+RUN groupadd --system --gid 10001 app \
+    && useradd --system --uid 10001 --gid app --no-create-home --shell /usr/sbin/nologin app \
     && mkdir -p /data/fastmcp \
     && chown -R app:app /data
 
