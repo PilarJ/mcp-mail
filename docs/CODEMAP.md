@@ -17,7 +17,7 @@ GitHub OAuth controls who can connect, and server-side recipient rules control w
 
 - [`pyproject.toml`](../pyproject.toml) declares Python 3.12 or newer, the runtime dependencies, the `dev` test extras and the `mail-mcp` console script. The script calls `mail_mcp.server:main`.
 - [`server.py`](../src/mail_mcp/server.py) is the startup entry point for the FastMCP server and GitHub OAuth configuration. MCP clients use `<BASE_URL>/mcp`. The GitHub OAuth app uses `<BASE_URL>/auth/callback`. Set `BASE_URL` to the client-reachable URL without a trailing slash.
-- [`Dockerfile`](../Dockerfile) installs the package into a Python 3.12 slim image, runs `mail-mcp` as `app` (UID/GID 10001), exposes port 8000 and uses `/data` for persistent state.
+- [`Dockerfile`](../Dockerfile) installs the package into a Python 3.15 slim image, runs `mail-mcp` as `app` (UID/GID 10001), exposes port 8000 and uses `/data` for persistent state.
 
 ## Where to make changes
 
@@ -47,10 +47,10 @@ The container runs in the foreground. Stop it with Ctrl+C to remove the containe
 
 ## Run tests
 
-Use Python 3.12 to match CI. From the repository root in a shell with Python 3.12 available:
+Use Python 3.15 to match CI. From the repository root in a shell with Python 3.15 available:
 
 ```bash
-python3.12 -m venv .venv
+python3.15 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 pytest -v --tb=short

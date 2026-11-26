@@ -49,7 +49,8 @@ AMBIGUOUS = [
 
 
 def rcpt(commands: list[str]) -> list[str]:
-    return re.findall(r"^rcpt TO:<(.*)>$", "\n".join(commands), re.MULTILINE)
+    # SMTP verbs are case-insensitive (RFC 5321); Python 3.15 smtplib sends "rcpt to:".
+    return re.findall(r"^(?i:rcpt to):<(.*)>$", "\n".join(commands), re.MULTILINE)
 
 
 async def send(harness, to, cc=None, **extra) -> dict:

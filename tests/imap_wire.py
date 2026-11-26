@@ -174,6 +174,10 @@ class _WireSocket:
     def sendall(self, data: bytes) -> None:
         self._server.feed(data)
 
+    def recv(self, bufsize: int) -> bytes:
+        # Python 3.14+ imaplib reads replies with sock.recv() instead of the makefile() reader.
+        return self._server.take(bufsize)
+
     def makefile(self, *args, **kwargs) -> _WireFile:
         return _WireFile(self._server)
 
