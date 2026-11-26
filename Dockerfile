@@ -10,6 +10,12 @@ COPY src ./src
 
 RUN pip install --no-cache-dir .
 
+# Run as an unprivileged user. /data must exist and be owned by it before the
+# VOLUME line so fresh named volumes inherit that ownership.
+RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin app \
+    && mkdir -p /data/fastmcp \
+    && chown -R app:app /data
+
 # Audit log of sent mail; mount a volume so it survives container replacement.
 VOLUME ["/data"]
 ENV DATA_DIR=/data
@@ -20,5 +26,7 @@ ENV DATA_DIR=/data
 ENV FASTMCP_HOME=/data/fastmcp
 
 EXPOSE 8000
+
+USER app
 
 CMD ["mail-mcp"]
