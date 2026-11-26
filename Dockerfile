@@ -10,11 +10,11 @@ COPY src ./src
 
 RUN pip install --no-cache-dir .
 
-# Run as an unprivileged user. /data is created and chowned before the VOLUME
-# declaration so a fresh named volume inherits the ownership.
-RUN useradd --system --create-home --uid 10001 --user-group app \
-    && mkdir -p /data \
-    && chown app:app /data
+# Run as an unprivileged user. /data must exist and be owned by it before the
+# VOLUME line so fresh named volumes inherit that ownership.
+RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin app \
+    && mkdir -p /data/fastmcp \
+    && chown -R app:app /data
 
 # Audit log of sent mail; mount a volume so it survives container replacement.
 VOLUME ["/data"]
